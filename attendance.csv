@@ -1,0 +1,9 @@
+EmployeeID,Date,ClockInTime,ClockOutTime,TotalHours
+C6001,2025-12-28,11:30 pm,11:30 pm,0.0 hours
+C6001,2025-12-28,11:33 pm,11:33 pm,0.0 hours
+C6001,2025-12-28,11:33 pm,11:33 pm,0.0 hours
+C6002,2025-12-28,11:35 pm,11:35 pm,0.0 hours
+C6001,2025-12-28,11:36 pm,11:36 pm,0.0 hours
+C6001,2025-12-29,11:52 pm,11:52 pm,0.0 hours
+C6001,2025-12-30,10:33 pm,10:33 pm,0.0 hours
+C6001,2025-12-30,10:48 pm,10:48 pm,0.0 hours

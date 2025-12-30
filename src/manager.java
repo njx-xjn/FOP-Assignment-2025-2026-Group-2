@@ -1,5 +1,5 @@
 public class manager extends employee {
-    public manager(String id,String password,String name,String role) {
-        super(id,password,name,role);
+    public manager(String id, String name, String role, String password, String outletCode) {
+        super(id, name, role, password, outletCode);
     }
 }

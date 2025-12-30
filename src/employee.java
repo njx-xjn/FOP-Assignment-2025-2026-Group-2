@@ -4,31 +4,32 @@ public class employee {
     private String password;
     private String role;
     private String outletCode;
-    
-    public employee(String id,String name,String role,String password){
-        this.id=id;
-        this.password=password;
-        this.name=name;
-        this.role=role;
-        this.outletCode=id.substring(0,3);
+
+    public employee(String id, String name, String role, String password, String outletCode) {
+        this.id = id;
+        this.password = password;
+        this.name = name;
+        this.role = role;
+        this.outletCode = outletCode;
     }
-    
-    public String getID(){
+
+    public String getID() {
         return id;
     }
-    public String getName(){
+
+    public String getName() {
         return name;
     }
-    
-    public String getRole(){
+
+    public String getRole() {
         return role;
     }
-    
-    public String getPassword(){
+
+    public String getPassword() {
         return password;
     }
-    
-    public String getOutlet(){
+
+    public String getOutlet() {
         return outletCode;
     }
 }

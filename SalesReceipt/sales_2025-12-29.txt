@@ -1,0 +1,51 @@
+=== Record New Sale ===
+Date: 2025-12-29
+Time: 09:51 pm
+Customer Name: Ahmad
+Item(s) Purchased:
+Model: DW2300-1
+Quantity: 1
+Unit Price: RM399.0
+-----------------------------
+Enter transaction method: Cash
+Subtotal: RM399.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2025-12-29.txt
+--------------------------------------------------
+=== Record New Sale ===
+Date: 2025-12-29
+Time: 10:03 pm
+Customer Name: Ahmad
+Item(s) Purchased:
+Model: DW2300-1
+Quantity: 1
+Unit Price: RM399.0
+-----------------------------
+Enter transaction method: Cash
+Subtotal: RM399.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2025-12-29.txt
+--------------------------------------------------
+=== Record New Sale ===
+Date: 2025-12-29
+Time: 10:35 pm
+Customer Name: Carol
+Item(s) Purchased:
+Model: DW2300-2
+Quantity: 2
+Unit Price: RM399.0
+-----------------------------
+Enter transaction method: Debit Card
+Subtotal: RM399.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2025-12-29.txt
+--------------------------------------------------
