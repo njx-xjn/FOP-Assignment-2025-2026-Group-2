@@ -1,4 +1,3 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
@@ -102,6 +101,7 @@ public class SalesTab {
                 receiptItems.append("Unit Price: RM").append(price).append("\n");
                 receiptItems.append("-----------------------------\n");
 
+                // Transaction object creation with Employee ID
                 Transaction t = new Transaction(loggedInUser.getID(), outletCode, modelStr, qty, rowTotal, customer);
                 pendingTxns.add(t);
             }
@@ -111,7 +111,7 @@ public class SalesTab {
                 return;
             }
 
-            // Commit
+            // Commit stock changes
             for (Transaction t : pendingTxns) {
                 models.get(t.getModelName()).reduceStock(outletCode, t.getQuantity());
             }
@@ -121,12 +121,16 @@ public class SalesTab {
             if (onStockUpdate != null)
                 onStockUpdate.run();
 
-            // Receipt
+            // --- RECEIPT GENERATION WITH EMPLOYEE ID ---
             StringBuilder rc = new StringBuilder();
             rc.append("=== Record New Sale ===\n");
             rc.append("Date: ").append(java.time.LocalDate.now()).append("\n");
             rc.append("Time: ").append(java.time.LocalTime.now()
                     .format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"))).append("\n");
+            
+            // MODIFIED LOGIC: Save the ID (e.g., C6001) so the DataLoader can find it
+            rc.append("Employee: ").append(loggedInUser.getID()).append("\n"); 
+            
             rc.append("Customer Name: ").append(customer).append("\n");
             rc.append("Item(s) Purchased:\n");
             rc.append(receiptItems);
@@ -141,7 +145,7 @@ public class SalesTab {
 
             JOptionPane.showMessageDialog(parentComponent, "Sale Recorded Successfully!\nTotal: RM" + grantTotal);
 
-            // Reset
+            // Reset UI
             custNameField.setText("");
             salesItemsPanel.removeAll();
             salesRows.clear();
