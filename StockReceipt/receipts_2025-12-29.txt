@@ -1,0 +1,30 @@
+=== Stock In ===
+Date: 2025-12-29
+Time: 09:33 pm
+From: HQ (Service Center)
+To: C60 (Kuala Lumpur City Centre)
+Models Received:
+
+    - DW2300-1 (Quantity: 1)
+
+Total Quantity: 1
+Name of Employee in Charge: Tan Guan Han
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------
+=== Stock In ===
+Date: 2025-12-29
+Time: 09:53 pm
+From: HQ (Service Center)
+To: C60 (Kuala Lumpur City Centre)
+Models Received:
+
+    - DW2300-1 (Quantity: 1)
+
+Total Quantity: 1
+Name of Employee in Charge: Tan Guan Han
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------

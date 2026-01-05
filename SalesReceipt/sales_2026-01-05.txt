@@ -1,0 +1,36 @@
+=== Record New Sale ===
+Date: 2026-01-05
+Time: 01:05 AM
+Employee: C6001
+Customer Name: Melvin
+Item(s) Purchased:
+Model: SW2400-2
+Quantity: 2
+Unit Price: RM769.0
+-----------------------------
+Enter transaction method: Cash
+Subtotal: RM1538.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2026-01-05.txt
+--------------------------------------------------
+=== Record New Sale ===
+Date: 2026-01-05
+Time: 01:06 AM
+Employee: C6001
+Customer Name: Zikri
+Item(s) Purchased:
+Model: DW2300-1
+Quantity: 1
+Unit Price: RM399.0
+-----------------------------
+Enter transaction method: Credit Card
+Subtotal: RM399.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2026-01-05.txt
+--------------------------------------------------
