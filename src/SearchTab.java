@@ -35,7 +35,7 @@ public class SearchTab {
         searchLabel = new JLabel("Search Model Name: ");
         searchInputField = new JTextField(20);
         JButton searchBtn = new JButton("Search");
-        searchBtn.setBackground(new Color(173, 216, 230)); // Light blue like mockup
+        searchBtn.setBackground(GUI.PRIMARY_COLOR); 
 
         inputPanel.add(searchLabel);
         inputPanel.add(searchInputField);

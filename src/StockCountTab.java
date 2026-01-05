@@ -1,6 +1,7 @@
-
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.util.Map;
 
@@ -19,14 +20,24 @@ public class StockCountTab {
 
     public JPanel createPanel() {
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE); // Ensure clean background
 
-        // Top: Selection
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.add(new JLabel("Select Session:"));
+        // --- TOP: SELECTION ---
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
+        topPanel.setBackground(Color.WHITE);
+        
+        JLabel lblSession = new JLabel("Select Session:");
+        lblSession.setFont(GUI.MAIN_FONT);
+        lblSession.setForeground(GUI.PRIMARY_COLOR);
+        
         sessionBox = new JComboBox<>(new String[] { "Morning Stock Count", "Night Stock Count" });
+        sessionBox.setFont(GUI.MAIN_FONT);
+        sessionBox.setBackground(Color.WHITE);
+        
+        topPanel.add(lblSession);
         topPanel.add(sessionBox);
 
-        // Center: Input Table
+        // --- CENTER: TABLE ---
         stockCountModel = new DefaultTableModel(new Object[] { "Model", "Enter Count" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -37,19 +48,57 @@ public class StockCountTab {
         refreshTable(); // Populate models
 
         JTable table = new JTable(stockCountModel);
-        table.setRowHeight(25);
+        
+        // *** FIX FOR INVISIBLE HEADERS ***
+        // We manually apply the same styling as the main GUI
+        styleTable(table);
+
         panel.add(topPanel, BorderLayout.NORTH);
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // Bottom: Verify Button
-        JButton verifyBtn = new JButton("Verify Stock");
-        verifyBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        verifyBtn.setBackground(new Color(144, 238, 144)); // Light green
+        // --- BOTTOM: VERIFY BUTTON ---
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.setBackground(Color.WHITE);
+        
+        // Use the custom button style from GUI if possible, or style manually
+        JButton verifyBtn = new JButton("VERIFY STOCK");
+        verifyBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        verifyBtn.setBackground(new Color(46, 204, 113)); // Green
+        verifyBtn.setForeground(Color.WHITE);
+        verifyBtn.setFocusPainted(false);
+        verifyBtn.setPreferredSize(new Dimension(150, 40));
+        verifyBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         verifyBtn.addActionListener(e -> performStockVerification());
-        panel.add(verifyBtn, BorderLayout.SOUTH);
+        
+        bottomPanel.add(verifyBtn);
+        panel.add(bottomPanel, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    // --- HELPER: Apply GUI Styles to this specific table ---
+    private void styleTable(JTable table) {
+        table.setRowHeight(40);
+        table.setFont(GUI.MAIN_FONT);
+        table.setGridColor(new Color(230, 230, 230));
+        table.setShowVerticalLines(false);
+        table.setSelectionBackground(new Color(253, 235, 208)); 
+        table.setSelectionForeground(Color.BLACK);
+        
+        // This specifically fixes the "Model" and "Enter Count" visibility
+        JTableHeader header = table.getTableHeader();
+        header.setBackground(GUI.PRIMARY_COLOR); // Dark Navy Background
+        header.setForeground(Color.WHITE);       // White Text
+        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        header.setPreferredSize(new Dimension(100, 45));
+        
+        // Center text in cells
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for(int i=0; i<table.getColumnCount(); i++){
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
     }
 
     public void refreshTable() {
