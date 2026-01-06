@@ -9,8 +9,8 @@ public class DataLoader {
     public Map<String, Model> loadModels() {
         Map<String, Model> models = new LinkedHashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(MODEL_FILE))) {
-            String header = br.readLine(); 
-            String[] headers = header.split(","); 
+            String header = br.readLine();
+            String[] headers = header.split(",");
 
             String line;
             while ((line = br.readLine()) != null) {
@@ -60,17 +60,19 @@ public class DataLoader {
         // No-op: Sales data is now only saved to receipt text files
     }
 
-    // --- UPDATED: Load Sales History for Performance Metrics (Capturing Employee ID) ---
+    // --- UPDATED: Load Sales History for Performance Metrics (Capturing Employee
+    // ID) ---
     public List<Transaction> loadTransactions() {
         List<Transaction> transactions = new ArrayList<>();
-        File dir = new File("SalesReceipt"); 
-        
+        File dir = new File("SalesReceipt");
+
         if (!dir.exists() || !dir.isDirectory()) {
             return transactions;
         }
 
         File[] files = dir.listFiles((d, name) -> name.endsWith(".txt"));
-        if (files == null) return transactions;
+        if (files == null)
+            return transactions;
 
         for (File f : files) {
             try (BufferedReader br = new BufferedReader(new FileReader(f))) {
@@ -81,28 +83,42 @@ public class DataLoader {
 
                 while ((line = br.readLine()) != null) {
                     // Extracting details from the receipt format
-                    if (line.contains("Date: ")) date = line.split(": ")[1].trim();
-                    else if (line.contains("Time: ")) time = line.split(": ")[1].trim();
-                    
-                    // MODIFIED: Capture the Employee ID to allow performance grouping (Critical for Tan Guan Han/C6001)
-                    else if (line.contains("Employee: ")) empId = line.split(": ")[1].trim(); 
-                    
-                    else if (line.contains("Customer Name: ")) cust = line.split(": ")[1].trim();
-                    else if (line.contains("Model: ")) model = line.split(": ")[1].trim();
-                    else if (line.contains("Quantity: ")) qty = Integer.parseInt(line.split(": ")[1].trim());
+                    if (line.contains("Date: "))
+                        date = line.split(": ")[1].trim();
+                    else if (line.contains("Time: "))
+                        time = line.split(": ")[1].trim();
+
+                    // MODIFIED: Capture the Employee ID to allow performance grouping (Critical for
+                    // Tan Guan Han/C6001)
+                    else if (line.contains("Employee: "))
+                        empId = line.split(": ")[1].trim();
+
+                    else if (line.contains("Customer Name: "))
+                        cust = line.split(": ")[1].trim();
+                    else if (line.contains("Model: "))
+                        model = line.split(": ")[1].trim();
+                    else if (line.contains("Quantity: "))
+                        qty = Integer.parseInt(line.split(": ")[1].trim());
                     else if (line.contains("Subtotal: RM")) {
                         amt = Double.parseDouble(line.split("RM")[1].trim());
                     }
-                    
+
                     // Finalize transaction object at the separator
-                    else if (line.startsWith("----------------")) { 
+                    // Check for the long separator that marks the end of a receipt (length 50)
+                    // The shorter separator (length 29) divides items from payment info
+                    else if (line.startsWith("----------------") && line.length() > 40) {
                         if (!model.isEmpty()) {
                             // Transaction ID is empty string as per your request
                             // empId is included for the Manager Performance Metrics logic
-                            transactions.add(new Transaction("", 
-                                           "SALE", date, time, empId, "C60", model, qty, amt, cust));
+                            transactions.add(new Transaction("",
+                                    "SALE", date, time, empId, "C60", model, qty, amt, cust));
                         }
-                        model = ""; // Reset for next block
+                        // Reset all fields for the next transaction in the file
+                        model = "";
+                        amt = 0;
+                        qty = 0;
+                        cust = "";
+                        // Date/Time/EmpId likely persist for the file or are overwritten by next header
                     }
                 }
             } catch (Exception e) {
@@ -142,7 +158,8 @@ public class DataLoader {
 
         for (int i = 1; i < lines.size(); i++) {
             String[] row = lines.get(i);
-            if (!found && row.length > 0 && row[0].equals(empId) && row[1].equals(date) && (row.length < 4 || row[3].isEmpty())) {
+            if (!found && row.length > 0 && row[0].equals(empId) && row[1].equals(date)
+                    && (row.length < 4 || row[3].isEmpty())) {
                 found = true;
                 try {
                     java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("hh:mm a");
@@ -151,7 +168,8 @@ public class DataLoader {
                     long minutes = java.time.temporal.ChronoUnit.MINUTES.between(inTime, outTime);
                     String totalHours = String.format("%.1f hours", minutes / 60.0);
                     newLines.add(row[0] + "," + row[1] + "," + row[2] + "," + time + "," + totalHours);
-                    result = "Clock Out Successful!\nDate: " + date + "\nTime: " + time + "\nTotal Hours: " + totalHours;
+                    result = "Clock Out Successful!\nDate: " + date + "\nTime: " + time + "\nTotal Hours: "
+                            + totalHours;
                 } catch (Exception e) {
                     newLines.add(String.join(",", row));
                     result = "Error: " + e.getMessage();
@@ -160,10 +178,14 @@ public class DataLoader {
                 newLines.add(String.join(",", row));
             }
         }
-        if (!found) return "Error: You have not clocked in today!";
+        if (!found)
+            return "Error: You have not clocked in today!";
         try (PrintWriter pw = new PrintWriter(new FileWriter(ATTENDANCE_FILE))) {
-            for (String line : newLines) pw.println(line);
-        } catch (IOException e) { return "Error writing file: " + e.getMessage(); }
+            for (String line : newLines)
+                pw.println(line);
+        } catch (IOException e) {
+            return "Error writing file: " + e.getMessage();
+        }
         return result;
     }
 
@@ -171,15 +193,18 @@ public class DataLoader {
         List<String[]> lines = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
-            while ((line = br.readLine()) != null) lines.add(line.split(","));
-        } catch (IOException e) {}
+            while ((line = br.readLine()) != null)
+                lines.add(line.split(","));
+        } catch (IOException e) {
+        }
         return lines;
     }
 
     public void appendReceipt(String content) {
         String directoryName = "StockReceipt";
         File directory = new File(directoryName);
-        if (!directory.exists()) directory.mkdir();
+        if (!directory.exists())
+            directory.mkdir();
         String date = java.time.LocalDate.now().toString();
         String filename = directoryName + File.separator + "receipts_" + date + ".txt";
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename, true))) {
@@ -187,28 +212,35 @@ public class DataLoader {
             bw.newLine();
             bw.write("--------------------------------------------------");
             bw.newLine();
-        } catch (IOException e) { System.out.println("Error saving receipt: " + e.getMessage()); }
+        } catch (IOException e) {
+            System.out.println("Error saving receipt: " + e.getMessage());
+        }
     }
 
     public void appendSalesReceipt(String content) {
         String directoryName = "SalesReceipt";
         File directory = new File(directoryName);
-        if (!directory.exists()) directory.mkdir();
+        if (!directory.exists())
+            directory.mkdir();
         String date = java.time.LocalDate.now().toString();
         String filename = directoryName + File.separator + "sales_" + date + ".txt";
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename, true))) { 
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename, true))) {
             bw.write(content);
             bw.newLine();
             bw.write("--------------------------------------------------");
             bw.newLine();
-        } catch (IOException e) { System.out.println("Error saving sales receipt: " + e.getMessage()); }
+        } catch (IOException e) {
+            System.out.println("Error saving sales receipt: " + e.getMessage());
+        }
     }
 
     public String searchSalesReceipts(String keyword) {
         File dir = new File("SalesReceipt");
-        if (!dir.exists() || !dir.isDirectory()) return "No records found.";
+        if (!dir.exists() || !dir.isDirectory())
+            return "No records found.";
         File[] files = dir.listFiles((d, name) -> name.endsWith(".txt"));
-        if (files == null || files.length == 0) return "No records found.";
+        if (files == null || files.length == 0)
+            return "No records found.";
 
         StringBuilder results = new StringBuilder();
         int matches = 0;
@@ -223,7 +255,8 @@ public class DataLoader {
                 while ((line = br.readLine()) != null) {
                     if (line.startsWith("===") && !block.isEmpty()) {
                         if (blockHasMatch) {
-                            for (String l : block) results.append(l).append("\n");
+                            for (String l : block)
+                                results.append(l).append("\n");
                             results.append("--------------------\n");
                             matches++;
                         }
@@ -231,14 +264,17 @@ public class DataLoader {
                         blockHasMatch = false;
                     }
                     block.add(line);
-                    if (line.toLowerCase().contains(lowerKey)) blockHasMatch = true;
+                    if (line.toLowerCase().contains(lowerKey))
+                        blockHasMatch = true;
                 }
                 if (blockHasMatch) {
-                    for (String l : block) results.append(l).append("\n");
+                    for (String l : block)
+                        results.append(l).append("\n");
                     results.append("--------------------\n");
                     matches++;
                 }
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
         }
         return matches == 0 ? "No matches found." : results.toString();
     }
