@@ -6,7 +6,6 @@ Customer Name: Ing Ing
 Item(s) Purchased:
 Model: SW2500-4
 Quantity: 2
-Unit Price: RM825.0
 -----------------------------
 Enter transaction method: Credit Card
 Subtotal: RM1650.00

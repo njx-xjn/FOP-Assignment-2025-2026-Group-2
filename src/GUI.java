@@ -693,7 +693,7 @@ public class GUI extends JFrame {
         ModernTextField idField = new ModernTextField("");
         ModernPasswordField passField = new ModernPasswordField("");
 
-        JComboBox<String> roleBox = new JComboBox<>(new String[] { "Part-time", "Full-time", "Manager" });
+        JComboBox<String> roleBox = new JComboBox<>(new String[] { "Part-time", "Full-time"});
         roleBox.setFont(MAIN_FONT);
         roleBox.setBackground(Color.WHITE);
 

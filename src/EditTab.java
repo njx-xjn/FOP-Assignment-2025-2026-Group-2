@@ -412,6 +412,7 @@ public class EditTab {
     // Filters out lines identifying transaction status or empty lines
     private boolean isStatusLine(String line) {
         return line.isEmpty() ||
+               line.contains("Unit Price:") ||
                line.contains("Transaction successful.") ||
                line.contains("Sale recorded successfully.") ||
                line.contains("Model quantities updated successfully.") ||
