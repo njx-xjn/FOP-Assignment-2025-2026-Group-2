@@ -59,3 +59,20 @@ Name of Employee in Charge: Tan Guan Han
 Model quantities updated successfully.
 Stock In recorded.
 --------------------------------------------------
+=== Stock In ===
+Date: 2026-01-10
+Time: 11:59 pm
+From: HQ (Service Center)
+To: C60 (Kuala Lumpur City Centre)
+Models Received:
+
+    - DW2300-1 (Quantity: 1)
+    - DW2300-2 (Quantity: 2)
+    - DW2300-3 (Quantity: 1)
+
+Total Quantity: 4
+Name of Employee in Charge: Tan Guan Han
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------

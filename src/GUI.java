@@ -132,7 +132,7 @@ public class GUI extends JFrame {
             UIManager.put("nimbusBlueGrey", PRIMARY_COLOR);
             UIManager.put("nimbusFocus", ACCENT_COLOR);
 
-            // --- BUTTONS: Force WHITE text so they are visible on Dark Navy ---
+            // --- BUTTONS: Force WHITE text ---
             Color white = Color.WHITE;
             UIManager.put("Button.foreground", white);
             UIManager.put("Button.textForeground", white);
@@ -142,11 +142,10 @@ public class GUI extends JFrame {
             UIManager.put("Button[Focused].textForeground", white);
             UIManager.put("Button[Default].textForeground", white);
 
-            // --- LABELS & INPUTS: Force BLACK text so they are visible on White Background
+            // --- LABELS & INPUTS ---
             Color black = Color.BLACK;
-
             UIManager.put("Label.foreground", black);
-            UIManager.put("Label.textForeground", black); // Nimbus specific key
+            UIManager.put("Label.textForeground", black);
 
             UIManager.put("TextField.foreground", black);
             UIManager.put("TextField.background", Color.WHITE);
@@ -154,9 +153,14 @@ public class GUI extends JFrame {
             UIManager.put("PasswordField.foreground", black);
             UIManager.put("PasswordField.background", Color.WHITE);
 
-            UIManager.put("ComboBox.foreground", black);
+            // --- COMBO BOX (DROPDOWN) FIX ---
+            // These keys ensure Nimbus actually renders the background as white
             UIManager.put("ComboBox.background", Color.WHITE);
             UIManager.put("ComboBox.disabledBackground", Color.WHITE);
+            UIManager.put("ComboBox[Enabled].background", Color.WHITE);
+            UIManager.put("ComboBox[Focused].background", Color.WHITE);
+            UIManager.put("ComboBox[Editable].background", Color.WHITE);
+            UIManager.put("ComboBox.foreground", black);
 
             // --- TABLE STYLING ---
             UIManager.put("Table.alternatingRowColor", new Color(248, 249, 250));
@@ -228,7 +232,6 @@ public class GUI extends JFrame {
             String pass = new String(passField.getPassword());
             if (employees.containsKey(id) && employees.get(id).getPassword().equals(pass)) {
                 loggedInUser = employees.get(id);
-                // We pass userField and passField to the dashboard so they can be cleared on logout
                 mainPanel.add(createDashboardPanel(userField, passField), "DASHBOARD");
                 cardLayout.show(mainPanel, "DASHBOARD");
             } else {
@@ -236,10 +239,7 @@ public class GUI extends JFrame {
             }
         };
 
-        // Trigger login on Button click
         loginBtn.addActionListener(loginAction);
-        
-        // FEATURE: Trigger login on ENTER key for both fields
         userField.addActionListener(loginAction);
         passField.addActionListener(loginAction);
 
@@ -279,9 +279,7 @@ public class GUI extends JFrame {
     }
 
     // --- 2. DASHBOARD ---
-    // Updated signature to accept login fields
     private JPanel createDashboardPanel(ModernTextField loginUserField, ModernPasswordField loginPassField) {
-        // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(PRIMARY_COLOR);
         headerPanel.setBorder(new EmptyBorder(25, 40, 25, 40));
@@ -308,7 +306,6 @@ public class GUI extends JFrame {
         headerPanel.add(brandLabel, BorderLayout.WEST);
         headerPanel.add(userInfoPanel, BorderLayout.EAST);
 
-        // Tabbed Pane
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13));
         tabbedPane.setBackground(Color.WHITE);
@@ -345,7 +342,6 @@ public class GUI extends JFrame {
             addTab(tabbedPane, "REGISTER STAFF", createRegisterPanel());
         }
 
-        // Footer / Logout
         JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         footerPanel.setBackground(BG_COLOR);
         footerPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
@@ -357,10 +353,8 @@ public class GUI extends JFrame {
             int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to logout?", "Confirm Logout",
                     JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                // FEATURE: Clear previous user id and password fields
                 loginUserField.setText("");
                 loginPassField.setText("");
-                
                 loggedInUser = null;
                 cardLayout.show(mainPanel, "LOGIN");
             }
@@ -380,7 +374,7 @@ public class GUI extends JFrame {
         wrapper.setBackground(Color.WHITE);
         wrapper.setBorder(new EmptyBorder(20, 20, 20, 20));
         wrapper.add(content);
-        pane.addTab("   " + title + "   ", wrapper);
+        pane.addTab("    " + title + "    ", wrapper);
     }
 
     // --- 3. PERFORMANCE PANEL ---
@@ -400,7 +394,6 @@ public class GUI extends JFrame {
         btnGenerate.addActionListener(e -> {
             tableModel.setRowCount(0);
             employees = csvFile.loadEmployee();
-
             List<Analytics.PerformanceEntry> performanceData = analytics.getEmployeePerformance();
 
             int rank = 1;
@@ -420,8 +413,7 @@ public class GUI extends JFrame {
                 }
 
                 String rankStr = "RANK " + rank;
-                if (rank == 1)
-                    rankStr = "TOP RANK";
+                if (rank == 1) rankStr = "TOP RANK";
 
                 tableModel.addRow(new Object[] {
                         rankStr,
@@ -456,7 +448,6 @@ public class GUI extends JFrame {
 
         Analytics analytics = new Analytics();
 
-        // Filter Panel
         RoundedPanel filterPanel = new RoundedPanel(15, new Color(248, 249, 250));
         filterPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
 
@@ -500,10 +491,8 @@ public class GUI extends JFrame {
             try {
                 LocalDate start = LocalDate.parse(startField.getText());
                 LocalDate end = LocalDate.parse(endField.getText());
-
                 List<Transaction> allTxns = dataLoader.loadTransactions();
                 List<Transaction> filtered = analytics.filterSalesByDate(allTxns, start, end);
-
                 analytics.sortSales(filtered, (String) sortBox.getSelectedItem(), ascCheck.isSelected());
 
                 tableModel.setRowCount(0);
@@ -516,8 +505,7 @@ public class GUI extends JFrame {
                             String.format("%.2f", t.getTotalAmount())
                     });
                 }
-                cumulativeLabel
-                        .setText(String.format("Total Sales: RM %.2f", analytics.calculateCumulativeTotal(filtered)));
+                cumulativeLabel.setText(String.format("Total Sales: RM %.2f", analytics.calculateCumulativeTotal(filtered)));
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error processing records. Check date format (YYYY-MM-DD).");
             }
@@ -538,7 +526,6 @@ public class GUI extends JFrame {
 
         Analytics analytics = new Analytics();
 
-        // 1. Controls
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
         controls.setBackground(Color.WHITE);
 
@@ -557,7 +544,6 @@ public class GUI extends JFrame {
         controls.add(periodBox);
         controls.add(refreshBtn);
 
-        // 2. Metrics Cards
         JPanel cardsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         cardsPanel.setBackground(Color.WHITE);
 
@@ -569,21 +555,16 @@ public class GUI extends JFrame {
         cardsPanel.add(cardModel);
         cardsPanel.add(cardAvg);
 
-        // 3. Chart Area
         SimpleBarChart chart = new SimpleBarChart();
         chart.setPreferredSize(new Dimension(800, 300));
         chart.setBorder(new LineBorder(new Color(230, 230, 230), 1));
 
-        // Action Logic
         Runnable updateData = () -> {
             String selectedPeriod = (String) periodBox.getSelectedItem();
             List<Transaction> all = dataLoader.loadTransactions();
-
-            // Filter
             LocalDate start = analytics.getStartDateForPeriod(selectedPeriod);
             List<Transaction> filtered = analytics.filterSalesByDate(all, start, LocalDate.now());
 
-            // Update Cards
             double total = analytics.calculateCumulativeTotal(filtered);
             String topModel = analytics.getTopSellingModelForList(filtered);
             double avg = analytics.calculateAverageDailySales(filtered, selectedPeriod);
@@ -592,7 +573,6 @@ public class GUI extends JFrame {
             updateCardValue(cardModel, topModel);
             updateCardValue(cardAvg, String.format("RM %.2f", avg));
 
-            // Update Chart
             Map<String, Double> trend = analytics.getTrendData(filtered, selectedPeriod);
             chart.setData(trend);
         };
@@ -600,7 +580,6 @@ public class GUI extends JFrame {
         periodBox.addActionListener(e -> updateData.run());
         refreshBtn.addActionListener(e -> updateData.run());
 
-        // Initial Load
         updateData.run();
 
         wrapper.add(controls, BorderLayout.NORTH);
@@ -613,7 +592,7 @@ public class GUI extends JFrame {
     private JPanel createAnalyticsCard(String title, String value, Color color) {
         RoundedPanel card = new RoundedPanel(20, color);
         card.setLayout(new GridLayout(2, 1));
-        card.setPreferredSize(new Dimension(200, 120)); // Adjusted size
+        card.setPreferredSize(new Dimension(200, 120));
         card.setBorder(new EmptyBorder(15, 15, 15, 15));
 
         JLabel lblTitle = new JLabel(title, JLabel.CENTER);
@@ -621,7 +600,7 @@ public class GUI extends JFrame {
         lblTitle.setForeground(new Color(255, 255, 255, 220));
 
         JLabel lblValue = new JLabel(value, JLabel.CENTER);
-        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 24)); // Slightly smaller font
+        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblValue.setForeground(Color.WHITE);
 
         card.add(lblTitle);
@@ -657,41 +636,34 @@ public class GUI extends JFrame {
             int height = getHeight();
             int padding = 40;
 
-            // Find max value for scaling
             double maxVal = data.values().stream().mapToDouble(Double::doubleValue).max().orElse(1.0);
-            if (maxVal == 0)
-                maxVal = 1;
+            if (maxVal == 0) maxVal = 1;
 
             int barWidth = (width - 2 * padding) / data.size();
             int x = padding;
 
             g2.setColor(Color.BLACK);
-            g2.drawLine(padding, height - padding, width - padding, height - padding); // X-Axis
+            g2.drawLine(padding, height - padding, width - padding, height - padding);
 
             for (Map.Entry<String, Double> entry : data.entrySet()) {
                 double val = entry.getValue();
                 int barHeight = (int) ((val / maxVal) * (height - 2 * padding));
 
-                // Draw Bar
                 g2.setColor(new Color(52, 152, 219));
                 g2.fillRect(x + 5, height - padding - barHeight, barWidth - 10, barHeight);
 
-                // Draw Label
                 g2.setColor(Color.DARK_GRAY);
                 g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
 
-                // Center text
                 FontMetrics fm = g2.getFontMetrics();
                 int textWidth = fm.stringWidth(entry.getKey());
                 g2.drawString(entry.getKey(), x + (barWidth - textWidth) / 2, height - padding + 15);
 
-                // Draw Value
                 if (val > 0) {
                     String valStr = String.valueOf((int) val);
                     int valWidth = fm.stringWidth(valStr);
                     g2.drawString(valStr, x + (barWidth - valWidth) / 2, height - padding - barHeight - 5);
                 }
-
                 x += barWidth;
             }
         }
@@ -704,7 +676,6 @@ public class GUI extends JFrame {
 
         RoundedPanel formPanel = new RoundedPanel(25, Color.WHITE);
         formPanel.setLayout(new GridBagLayout());
-        formPanel.setBorder(new EmptyBorder(30, 50, 30, 50));
         formPanel.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(230, 230, 230), 1),
                 new EmptyBorder(30, 50, 30, 50)));
@@ -802,7 +773,7 @@ public class GUI extends JFrame {
     }
 
     // ==========================================
-    // CUSTOM UI COMPONENT CLASSES (PUBLIC STATIC)
+    // CUSTOM UI COMPONENT CLASSES
     // ==========================================
 
     public static class ModernButton extends JButton {
@@ -825,7 +796,6 @@ public class GUI extends JFrame {
                     setBackground(hoverColor);
                     repaint();
                 }
-
                 public void mouseExited(MouseEvent e) {
                     setBackground(baseColor);
                     repaint();
