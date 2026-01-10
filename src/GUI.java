@@ -143,8 +143,6 @@ public class GUI extends JFrame {
             UIManager.put("Button[Default].textForeground", white);
 
             // --- LABELS & INPUTS: Force BLACK text so they are visible on White Background
-            // ---
-            // This fixes the "Model" and "Enter Count" invisibility issue
             Color black = Color.BLACK;
 
             UIManager.put("Label.foreground", black);
@@ -224,17 +222,26 @@ public class GUI extends JFrame {
         ModernButton loginBtn = new ModernButton("LOGIN TO DASHBOARD", ACCENT_COLOR, Color.WHITE);
         loginBtn.setPreferredSize(new Dimension(200, 45));
 
-        loginBtn.addActionListener(e -> {
+        // Shared Login Logic
+        java.awt.event.ActionListener loginAction = e -> {
             String id = userField.getText().trim();
             String pass = new String(passField.getPassword());
             if (employees.containsKey(id) && employees.get(id).getPassword().equals(pass)) {
                 loggedInUser = employees.get(id);
-                mainPanel.add(createDashboardPanel(), "DASHBOARD");
+                // We pass userField and passField to the dashboard so they can be cleared on logout
+                mainPanel.add(createDashboardPanel(userField, passField), "DASHBOARD");
                 cardLayout.show(mainPanel, "DASHBOARD");
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid User ID or Password", "Access Denied", JOptionPane.ERROR_MESSAGE);
             }
-        });
+        };
+
+        // Trigger login on Button click
+        loginBtn.addActionListener(loginAction);
+        
+        // FEATURE: Trigger login on ENTER key for both fields
+        userField.addActionListener(loginAction);
+        passField.addActionListener(loginAction);
 
         // Layout
         gbc.gridx = 0;
@@ -272,7 +279,8 @@ public class GUI extends JFrame {
     }
 
     // --- 2. DASHBOARD ---
-    private JPanel createDashboardPanel() {
+    // Updated signature to accept login fields
+    private JPanel createDashboardPanel(ModernTextField loginUserField, ModernPasswordField loginPassField) {
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(PRIMARY_COLOR);
@@ -349,6 +357,10 @@ public class GUI extends JFrame {
             int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to logout?", "Confirm Logout",
                     JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
+                // FEATURE: Clear previous user id and password fields
+                loginUserField.setText("");
+                loginPassField.setText("");
+                
                 loggedInUser = null;
                 cardLayout.show(mainPanel, "LOGIN");
             }
@@ -368,7 +380,7 @@ public class GUI extends JFrame {
         wrapper.setBackground(Color.WHITE);
         wrapper.setBorder(new EmptyBorder(20, 20, 20, 20));
         wrapper.add(content);
-        pane.addTab("   " + title + "   ", wrapper);
+        pane.addTab("   " + title + "   ", wrapper);
     }
 
     // --- 3. PERFORMANCE PANEL ---

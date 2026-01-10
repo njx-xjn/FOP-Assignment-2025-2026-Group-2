@@ -129,7 +129,6 @@ public class EditTab {
         // Row 5: Update Button
         updateStockBtn = new JButton("Update Selected Outlet Stock");
         updateStockBtn.setEnabled(false);
-        updateStockBtn.setBackground(new Color(25, 25, 112));
         gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 3;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(updateStockBtn, gbc);
@@ -250,7 +249,6 @@ public class EditTab {
 
         updateSalesBtn = new JButton("Confirm Update");
         updateSalesBtn.setEnabled(false);
-        updateSalesBtn.setBackground(new Color(173, 216, 230));
         gbc.gridx = 0; gbc.gridy = 7;
         gbc.gridwidth = 3;
         gbc.fill = GridBagConstraints.HORIZONTAL;
