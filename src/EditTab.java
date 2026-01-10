@@ -1,8 +1,8 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -10,8 +10,6 @@ public class EditTab {
     private Map<String, Model> models;
     private DataLoader dataLoader;
     private Component parentComponent;
-    private Map<String, String> outlets; // Not strictly needed for editing stock count, but good for context if
-                                         // expanded
 
     // UI Components
     private JComboBox<String> editTypeBox;
@@ -20,10 +18,15 @@ public class EditTab {
 
     // Stock Edit Components
     private JTextField stockModelField;
-    private JLabel currentStockLabel;
+    private JComboBox<String> outletBox; // NEW: Outlet selection
+    private JLabel currentStockLabel;    // Total Stock
+    private JLabel outletStockLabel;     // NEW: Specific Outlet Stock
     private JTextField newStockField;
     private JButton updateStockBtn;
     private String currentModelName;
+    
+    // Defined Outlets
+    private final String[] outletCodes = {"C60", "C61", "C62", "C63", "C64", "C65", "C67", "C68", "C69"};
 
     // Sales Edit Components
     private JTextField salesDateField;
@@ -31,8 +34,8 @@ public class EditTab {
     private JButton updateSalesBtn;
 
     private File currentSalesFile;
-    private int currentBlockStartIndex; // Line index where the record starts
-    private int currentBlockEndIndex; // Line index where the record ends
+    private int currentBlockStartIndex; 
+    private int currentBlockEndIndex; 
 
     public EditTab(Map<String, Model> models, DataLoader dataLoader, Component parentComponent) {
         this.models = models;
@@ -73,147 +76,90 @@ public class EditTab {
         return panel;
     }
 
-    // --- STOCK EDIT PANEL ---
+    // --- UPDATED STOCK EDIT PANEL ---
     private JPanel createStockEditPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(8, 10, 8, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Search Section
-        gbc.gridx = 0;
-        gbc.gridy = 0;
+        // Row 0: Search
+        gbc.gridx = 0; gbc.gridy = 0;
         formPanel.add(new JLabel("Enter Model Name:"), gbc);
-
         stockModelField = new JTextField(15);
         gbc.gridx = 1;
         formPanel.add(stockModelField, gbc);
-
         JButton searchBtn = new JButton("Search");
         gbc.gridx = 2;
         formPanel.add(searchBtn, gbc);
 
-        // Info Section
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        formPanel.add(new JLabel("Current Stock (Total):"), gbc);
+        // Row 1: Outlet Selection
+        gbc.gridx = 0; gbc.gridy = 1;
+        formPanel.add(new JLabel("Select Outlet:"), gbc);
+        outletBox = new JComboBox<>(outletCodes);
+        gbc.gridx = 1;
+        formPanel.add(outletBox, gbc);
 
+        // Row 2: Outlet Specific Info
+        gbc.gridx = 0; gbc.gridy = 2;
+        formPanel.add(new JLabel("Current Stock (Selected Outlet):"), gbc);
+        outletStockLabel = new JLabel("-");
+        outletStockLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        gbc.gridx = 1;
+        formPanel.add(outletStockLabel, gbc);
+
+        // Row 3: Total Info
+        gbc.gridx = 0; gbc.gridy = 3;
+        formPanel.add(new JLabel("Total Stock (All Outlets):"), gbc);
         currentStockLabel = new JLabel("-");
-        currentStockLabel.setFont(new Font("Arial", Font.BOLD, 14));
         gbc.gridx = 1;
         formPanel.add(currentStockLabel, gbc);
 
-        // Edit Section
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        formPanel.add(new JLabel("Enter New Stock Value (Total):"), gbc);
-
+        // Row 4: New Value Input
+        gbc.gridx = 0; gbc.gridy = 4;
+        formPanel.add(new JLabel("Enter New Stock for Outlet:"), gbc);
         newStockField = new JTextField(10);
-        newStockField.setEnabled(false); // Disabled until search found
+        newStockField.setEnabled(false);
         gbc.gridx = 1;
         formPanel.add(newStockField, gbc);
 
-        updateStockBtn = new JButton("Update Stock");
+        // Row 5: Update Button
+        updateStockBtn = new JButton("Update Selected Outlet Stock");
         updateStockBtn.setEnabled(false);
-        updateStockBtn.setBackground(new Color(173, 216, 230));
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 3;
+        updateStockBtn.setBackground(new Color(25, 25, 112));
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 3;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(updateStockBtn, gbc);
 
-        // Logic
-        searchBtn.addActionListener(e -> {
-            String modelName = stockModelField.getText().trim();
-            if (models.containsKey(modelName)) {
-                currentModelName = modelName;
-                Model m = models.get(modelName);
+        // Logic: Search Action
+        searchBtn.addActionListener(e -> updateStockDisplay());
 
-                // Calculate total stock for simplicity as "New Stock Value" implies a single
-                // number
-                // However, the system is multi-outlet.
-                // The requirements say "Enter New Stock Value".
-                // If I just set the stock, where does it go?
-                // Assumption: Updating stock sets it for a default outlet or distributes it?
-                // Or maybe the user means "Stock for specific outlet"?
-                // Start with simplifiction: Just show HQ stock? Or Sum?
-                // The screenshot shows "Current Stock: 1".
-                // I will display total stock and if updated, I might need to ask "Where?"
-                // BUT, to keep it simple and match screenshot, I'll update the first available
-                // outlet or HQ.
+        // Logic: Change outlet selection (auto-refresh labels)
+        outletBox.addActionListener(e -> updateStockDisplay());
 
-                // Let's check keys.
-                int total = m.getTotalStock();
-                currentStockLabel.setText(String.valueOf(total));
-                newStockField.setEnabled(true);
-                updateStockBtn.setEnabled(true);
-                newStockField.setText("");
-                newStockField.requestFocus();
-            } else {
-                JOptionPane.showMessageDialog(parentComponent, "Model not found.");
-                currentStockLabel.setText("-");
-                newStockField.setEnabled(false);
-                updateStockBtn.setEnabled(false);
-            }
-        });
-
+        // Logic: Update Action
         updateStockBtn.addActionListener(e -> {
             try {
                 int newStock = Integer.parseInt(newStockField.getText().trim());
-                if (newStock < 0)
-                    throw new NumberFormatException();
+                if (newStock < 0) throw new NumberFormatException();
 
                 Model m = models.get(currentModelName);
+                String selectedOutlet = (String) outletBox.getSelectedItem();
 
-                // CRITICAL: How to set "Total Stock"?
-                // The Model class has setStock(outlet, qty).
-                // I will set the stock of the FIRST outlet found in the keys to this value,
-                // and zero out others? Or is there an "HQ"?
-                // To minimize destruction, I will assume we are editing HQ stock if available,
-                // or just picking the first one.
-                // A better approach for this assignment context: likely just updating the main
-                // inventory.
+                // Update internal data
+                m.setStock(selectedOutlet, newStock);
 
-                // Let's look at Model keys from DataLoader.
-                // I'll grab the first key.
-                if (!m.getStocks().isEmpty()) {
-                    String targetOutlet = m.getStocks().keySet().iterator().next();
-                    // Actually, if I update total, I should probably ask "Which outlet"
-                    // but the UI in screenshot is too simple.
-                    // I will update the matching outlet if logic allows, or just HQ.
-                    // For now, let's update "HQ" if exists, or just the first one.
+                // Save to CSV using the list of outlet codes for header consistency
+                dataLoader.saveModels(models, Arrays.asList(outletCodes));
 
-                    if (m.getStocks().containsKey("HQ")) {
-                        targetOutlet = "HQ";
-                    }
-
-                    // Reset others? No, that's dangerous.
-                    // Let's assumes we are editing specific outlet stock?
-                    // Screenshot doesn't show outlet selection.
-
-                    // Compromise: I will set the stock of the PRIMARY outlet (first one or HQ)
-                    // to the difference needed? No.
-                    // I'll just set the first outlet's stock to the new value
-                    // AND warn the user if there are multiple outlets.
-
-                    m.setStock(targetOutlet, newStock);
-
-                    // Save
-                    // We need the list of outlets for the header.
-                    // DataLoader.saveModels needs a list of codes. I don't have it explicitly here
-                    // unless passed. I'll get it from the model's keys.
-                    List<String> codes = new ArrayList<>(m.getStocks().keySet());
-                    dataLoader.saveModels(models, codes);
-
-                    JOptionPane.showMessageDialog(parentComponent, "Stock updated successfully.");
-                    currentStockLabel.setText(String.valueOf(newStock)); // Refresh UI
-                    newStockField.setText("");
-                }
+                JOptionPane.showMessageDialog(parentComponent, "Stock updated successfully for " + selectedOutlet);
+                updateStockDisplay(); // Refresh the labels
+                newStockField.setText("");
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(parentComponent, "Invalid stock value.");
+                JOptionPane.showMessageDialog(parentComponent, "Invalid stock value. Please enter a positive integer.");
             }
         });
 
@@ -221,7 +167,29 @@ public class EditTab {
         return panel;
     }
 
-    // --- SALES EDIT PANEL ---
+    // Helper method to refresh the labels during search or outlet switch
+    private void updateStockDisplay() {
+        String modelName = stockModelField.getText().trim();
+        if (models.containsKey(modelName)) {
+            currentModelName = modelName;
+            Model m = models.get(modelName);
+            String selectedOutlet = (String) outletBox.getSelectedItem();
+
+            outletStockLabel.setText(String.valueOf(m.getStock(selectedOutlet)));
+            currentStockLabel.setText(String.valueOf(m.getTotalStock()));
+            
+            newStockField.setEnabled(true);
+            updateStockBtn.setEnabled(true);
+        } else {
+            if(!modelName.isEmpty()) JOptionPane.showMessageDialog(parentComponent, "Model not found.");
+            outletStockLabel.setText("-");
+            currentStockLabel.setText("-");
+            newStockField.setEnabled(false);
+            updateStockBtn.setEnabled(false);
+        }
+    }
+
+    // --- SALES EDIT PANEL (Original Features Preserved) ---
     private JPanel createSalesEditPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -231,53 +199,39 @@ public class EditTab {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Search inputs
-        gbc.gridx = 0;
-        gbc.gridy = 0;
+        gbc.gridx = 0; gbc.gridy = 0;
         formPanel.add(new JLabel("Enter Transaction Date (YYYY-MM-DD):"), gbc);
         salesDateField = new JTextField(15);
         salesDateField.setText(java.time.LocalDate.now().toString());
         gbc.gridx = 1;
         formPanel.add(salesDateField, gbc);
 
-        gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridx = 0; gbc.gridy = 1;
         formPanel.add(new JLabel("Enter Customer Name:"), gbc);
         salesCustomerField = new JTextField(15);
         gbc.gridx = 1;
         formPanel.add(salesCustomerField, gbc);
 
         JButton searchBtn = new JButton("Find Record");
-        gbc.gridx = 2;
-        gbc.gridy = 1;
+        gbc.gridx = 2; gbc.gridy = 1;
         formPanel.add(searchBtn, gbc);
 
-        // Edit inputs
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 3;
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3;
         formPanel.add(new JSeparator(), gbc);
         gbc.gridwidth = 1;
 
-        // Current Record Display
-        gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridx = 0; gbc.gridy = 3;
         formPanel.add(new JLabel("Current Record Details:"), gbc);
 
         JTextArea recordSummaryArea = new JTextArea(8, 30);
         recordSummaryArea.setEditable(false);
         recordSummaryArea.setBackground(new Color(240, 240, 240));
         JScrollPane scrollPane = new JScrollPane(recordSummaryArea);
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.gridwidth = 3;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 3;
         gbc.fill = GridBagConstraints.BOTH;
         formPanel.add(scrollPane, gbc);
 
-        // Field Selection
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
         formPanel.add(new JLabel("Select Field to Edit:"), gbc);
 
@@ -286,9 +240,7 @@ public class EditTab {
         gbc.gridx = 1;
         formPanel.add(fieldSelectBox, gbc);
 
-        // New Value Input
-        gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridx = 0; gbc.gridy = 6;
         formPanel.add(new JLabel("Enter New Value:"), gbc);
 
         JTextField newValueField = new JTextField(20);
@@ -299,13 +251,11 @@ public class EditTab {
         updateSalesBtn = new JButton("Confirm Update");
         updateSalesBtn.setEnabled(false);
         updateSalesBtn.setBackground(new Color(173, 216, 230));
-        gbc.gridx = 0;
-        gbc.gridy = 7;
+        gbc.gridx = 0; gbc.gridy = 7;
         gbc.gridwidth = 3;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(updateSalesBtn, gbc);
 
-        // Logic
         searchBtn.addActionListener(e -> findSalesRecord(recordSummaryArea));
 
         updateSalesBtn.addActionListener(e -> {
@@ -425,7 +375,6 @@ public class EditTab {
                 newBlock.add(updated);
             }
 
-            // Write back
             List<String> validLines = new ArrayList<>();
             for (int i = 0; i < currentBlockStartIndex; i++)
                 validLines.add(lines.get(i));
@@ -441,7 +390,6 @@ public class EditTab {
 
             JOptionPane.showMessageDialog(parentComponent, "Sales information updated successfully.");
 
-            // Refresh Summary
             StringBuilder sb = new StringBuilder();
             for (String l : newBlock)
                 sb.append(l).append("\n");
