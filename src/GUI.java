@@ -232,7 +232,7 @@ public class GUI extends JFrame {
                 mainPanel.add(createDashboardPanel(), "DASHBOARD");
                 cardLayout.show(mainPanel, "DASHBOARD");
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Credentials", "Access Denied", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Invalid User ID or Password", "Access Denied", JOptionPane.ERROR_MESSAGE);
             }
         });
 

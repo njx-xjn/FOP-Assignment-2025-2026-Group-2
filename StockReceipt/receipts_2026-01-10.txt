@@ -1,0 +1,61 @@
+=== Stock In ===
+Date: 2026-01-10
+Time: 09:01 pm
+From: HQ (Service Center)
+To: C60 (Kuala Lumpur City Centre)
+Models Received:
+
+    - SW2500-4 (Quantity: 1)
+    - SW2500-3 (Quantity: 1)
+
+Total Quantity: 2
+Name of Employee in Charge: Tan Guan Han
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------
+=== Stock In ===
+Date: 2026-01-10
+Time: 09:06 pm
+From: HQ (Service Center)
+To: C60 (Kuala Lumpur City Centre)
+Models Received:
+
+    - SW2400-2 (Quantity: 1)
+
+Total Quantity: 1
+Name of Employee in Charge: Tan Guan Han
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------
+=== Stock In ===
+Date: 2026-01-10
+Time: 09:35 pm
+From: C60 (Kuala Lumpur City Centre)
+To: C62 (Sunway Velocity)
+Models Received:
+
+    - SW2400-1 (Quantity: 3)
+
+Total Quantity: 3
+Name of Employee in Charge: Deric
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------
+=== Stock In ===
+Date: 2026-01-10
+Time: 10:11 pm
+From: HQ (Service Center)
+To: C60 (Kuala Lumpur City Centre)
+Models Received:
+
+    - DW2400-1 (Quantity: 1)
+
+Total Quantity: 1
+Name of Employee in Charge: Tan Guan Han
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------

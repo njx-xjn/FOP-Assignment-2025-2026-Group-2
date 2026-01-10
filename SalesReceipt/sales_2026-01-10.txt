@@ -1,0 +1,72 @@
+=== Record New Sale ===
+Date: 2026-01-10
+Time: 09:08 pm
+Employee: C6001
+Customer Name: Ing Ing
+Item(s) Purchased:
+Model: SW2500-4
+Quantity: 2
+Unit Price: RM825.0
+-----------------------------
+Enter transaction method: Debit Card
+Subtotal: RM1650.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2026-01-10.txt
+--------------------------------------------------
+=== Record New Sale ===
+Date: 2026-01-10
+Time: 09:10 pm
+Employee: C6001
+Customer Name: Ing Ing
+Item(s) Purchased:
+Model: SW2500-3
+Quantity: 1
+Unit Price: RM845.0
+-----------------------------
+Enter transaction method: Debit Card
+Subtotal: RM845.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2026-01-10.txt
+--------------------------------------------------
+=== Record New Sale ===
+Date: 2026-01-10
+Time: 09:35 pm
+Employee: C6013
+Customer Name: Quan Quan
+Item(s) Purchased:
+Model: SW2400-1
+Quantity: 1
+Unit Price: RM789.0
+-----------------------------
+Enter transaction method: E-Wallet
+Subtotal: RM789.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2026-01-10.txt
+--------------------------------------------------
+=== Record New Sale ===
+Date: 2026-01-10
+Time: 09:36 pm
+Employee: C6014
+Customer Name: Chong Chong
+Item(s) Purchased:
+Model: DW2400-2
+Quantity: 1
+Unit Price: RM599.0
+-----------------------------
+Enter transaction method: Credit Card
+Subtotal: RM599.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2026-01-10.txt
+--------------------------------------------------
