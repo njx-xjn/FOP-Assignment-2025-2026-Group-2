@@ -11,11 +11,15 @@ import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class GUI extends JFrame {
     private CardLayout cardLayout = new CardLayout();
     private JPanel mainPanel = new JPanel(cardLayout);
     private employee loggedInUser;
+
+    // Auto-Email Flag
+    private boolean emailSentToday = false;
 
     // Services
     private CSVfile csvFile = new CSVfile();
@@ -25,9 +29,9 @@ public class GUI extends JFrame {
     private Map<String, String> outlets;
 
     // --- DESIGN CONSTANTS ---
-    public static final Color PRIMARY_COLOR = new Color(44, 62, 80);    // Dark Navy
-    public static final Color ACCENT_COLOR = new Color(243, 156, 18);   // Golden/Orange
-    public static final Color BG_COLOR = new Color(240, 243, 244);      // Very Light Gray
+    public static final Color PRIMARY_COLOR = new Color(44, 62, 80); // Dark Navy
+    public static final Color ACCENT_COLOR = new Color(243, 156, 18); // Golden/Orange
+    public static final Color BG_COLOR = new Color(240, 243, 244); // Very Light Gray
     public static final Font MAIN_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     public static final Font HEADER_FONT = new Font("Segoe UI", Font.BOLD, 22);
 
@@ -36,7 +40,7 @@ public class GUI extends JFrame {
         setupModernUI();
 
         setTitle("GoldenHour Management System");
-        setSize(1200, 850); 
+        setSize(1200, 850);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -47,11 +51,71 @@ public class GUI extends JFrame {
 
         // Main Container Style
         mainPanel.setBackground(BG_COLOR);
-        
+
         mainPanel.add(createLoginPanel(), "LOGIN");
 
         add(mainPanel);
         setVisible(true);
+
+        // --- BACKGROUND TIMER ---
+        Timer emailTimer = new Timer(60000, e -> checkAndSendEmail());
+        emailTimer.start();
+    }
+
+    private void checkAndSendEmail() {
+        java.time.LocalTime now = java.time.LocalTime.now();
+        // Trigger at 9:55 PM (21:55)
+        // Ensure it only sends once per day
+        if (now.getHour() == 21 && now.getMinute() >= 55 && !emailSentToday) {
+            System.out.println("Auto-Email Triggered...");
+            performAutoEmail();
+            emailSentToday = true;
+        }
+
+        // Reset flag at midnight
+        if (now.getHour() == 0 && now.getMinute() == 0) {
+            emailSentToday = false;
+        }
+    }
+
+    private void performAutoEmail() {
+        new Thread(() -> {
+            try {
+                // Report is for Today
+                LocalDate reportDateObj = LocalDate.now();
+                String reportDate = reportDateObj.toString();
+
+                // 1. Generate Summary
+                Analytics analytics = new Analytics();
+                // Filter today's sales
+                List<Transaction> all = dataLoader.loadTransactions();
+                List<Transaction> reportTransactions = analytics.filterSalesByDate(all, reportDateObj, reportDateObj);
+                double totalSales = analytics.calculateCumulativeTotal(reportTransactions);
+
+                String summary = "Dear Headquarters,\n\n"
+                        + "Please find attached the daily sales report for " + reportDate + ".\n\n"
+                        + "Summary:\n"
+                        + "- Total Sales: RM " + String.format("%.2f", totalSales) + "\n"
+                        + "- Report Date: " + reportDate + "\n\n"
+                        + "Best Regards,\nGoldenHour System";
+
+                // 2. Locate File
+                String filename = "SalesReceipt/sales_" + reportDate + ".txt";
+                java.io.File f = new java.io.File(filename);
+                if (!f.exists()) {
+                    System.out.println(
+                            "No sales receipt file found for " + reportDate + " (" + filename + "). Skipping email.");
+                    return;
+                }
+
+                // 3. Send
+                EmailService emailService = new EmailService();
+                emailService.sendDailyReport("25006144@siswa.um.edu.my", summary, f.getAbsolutePath());
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }).start();
     }
 
     private void setupModernUI() {
@@ -64,10 +128,10 @@ public class GUI extends JFrame {
             }
             // --- GLOBAL THEME COLORS ---
             UIManager.put("Control", BG_COLOR);
-            UIManager.put("nimbusBase", PRIMARY_COLOR);      // Buttons Background
+            UIManager.put("nimbusBase", PRIMARY_COLOR); // Buttons Background
             UIManager.put("nimbusBlueGrey", PRIMARY_COLOR);
             UIManager.put("nimbusFocus", ACCENT_COLOR);
-            
+
             // --- BUTTONS: Force WHITE text so they are visible on Dark Navy ---
             Color white = Color.WHITE;
             UIManager.put("Button.foreground", white);
@@ -78,16 +142,17 @@ public class GUI extends JFrame {
             UIManager.put("Button[Focused].textForeground", white);
             UIManager.put("Button[Default].textForeground", white);
 
-            // --- LABELS & INPUTS: Force BLACK text so they are visible on White Background ---
+            // --- LABELS & INPUTS: Force BLACK text so they are visible on White Background
+            // ---
             // This fixes the "Model" and "Enter Count" invisibility issue
             Color black = Color.BLACK;
-            
-            UIManager.put("Label.foreground", black); 
+
+            UIManager.put("Label.foreground", black);
             UIManager.put("Label.textForeground", black); // Nimbus specific key
 
             UIManager.put("TextField.foreground", black);
             UIManager.put("TextField.background", Color.WHITE);
-            
+
             UIManager.put("PasswordField.foreground", black);
             UIManager.put("PasswordField.background", Color.WHITE);
 
@@ -97,9 +162,9 @@ public class GUI extends JFrame {
 
             // --- TABLE STYLING ---
             UIManager.put("Table.alternatingRowColor", new Color(248, 249, 250));
-            UIManager.put("TabbedPane.contentBorderInsets", new Insets(0,0,0,0));
+            UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0));
             UIManager.put("TabbedPane.selected", ACCENT_COLOR);
-            
+
         } catch (Exception e) {
             // Fallback
         }
@@ -111,18 +176,18 @@ public class GUI extends JFrame {
         table.setFont(MAIN_FONT);
         table.setGridColor(new Color(230, 230, 230));
         table.setShowVerticalLines(false);
-        table.setSelectionBackground(new Color(253, 235, 208)); 
+        table.setSelectionBackground(new Color(253, 235, 208));
         table.setSelectionForeground(Color.BLACK);
-        
+
         JTableHeader header = table.getTableHeader();
         header.setBackground(PRIMARY_COLOR);
         header.setForeground(Color.WHITE);
         header.setFont(new Font("Segoe UI", Font.BOLD, 14));
         header.setPreferredSize(new Dimension(100, 45));
-        
+
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        for(int i=0; i<table.getColumnCount(); i++){
+        for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
     }
@@ -130,7 +195,7 @@ public class GUI extends JFrame {
     // --- 1. LOGIN PANEL ---
     private JPanel createLoginPanel() {
         JPanel backgroundPanel = new JPanel(new GridBagLayout());
-        backgroundPanel.setBackground(PRIMARY_COLOR); 
+        backgroundPanel.setBackground(PRIMARY_COLOR);
 
         RoundedPanel cardPanel = new RoundedPanel(30, Color.WHITE);
         cardPanel.setLayout(new GridBagLayout());
@@ -145,7 +210,7 @@ public class GUI extends JFrame {
         title.setFont(new Font("Segoe UI", Font.BOLD, 32));
         title.setForeground(PRIMARY_COLOR);
         title.setHorizontalAlignment(SwingConstants.CENTER);
-        
+
         JLabel subtitle = new JLabel("Management Portal");
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         subtitle.setForeground(Color.GRAY);
@@ -160,7 +225,7 @@ public class GUI extends JFrame {
         loginBtn.setPreferredSize(new Dimension(200, 45));
 
         loginBtn.addActionListener(e -> {
-            String id = userField.getText().trim(); 
+            String id = userField.getText().trim();
             String pass = new String(passField.getPassword());
             if (employees.containsKey(id) && employees.get(id).getPassword().equals(pass)) {
                 loggedInUser = employees.get(id);
@@ -172,10 +237,11 @@ public class GUI extends JFrame {
         });
 
         // Layout
-        gbc.gridx = 0; gbc.gridy = 0; 
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         cardPanel.add(title, gbc);
-        
-        gbc.gridy = 1; 
+
+        gbc.gridy = 1;
         gbc.insets = new Insets(0, 10, 30, 10);
         cardPanel.add(subtitle, gbc);
 
@@ -184,19 +250,19 @@ public class GUI extends JFrame {
         JLabel lblUser = new JLabel("User ID");
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 12));
         cardPanel.add(lblUser, gbc);
-        
-        gbc.gridy = 3; 
+
+        gbc.gridy = 3;
         cardPanel.add(userField, gbc);
 
-        gbc.gridy = 4; 
+        gbc.gridy = 4;
         JLabel lblPass = new JLabel("Password");
         lblPass.setFont(new Font("Segoe UI", Font.BOLD, 12));
         cardPanel.add(lblPass, gbc);
-        
-        gbc.gridy = 5; 
+
+        gbc.gridy = 5;
         cardPanel.add(passField, gbc);
 
-        gbc.gridy = 6; 
+        gbc.gridy = 6;
         gbc.insets = new Insets(30, 10, 10, 10);
         gbc.fill = GridBagConstraints.NONE;
         cardPanel.add(loginBtn, gbc);
@@ -211,26 +277,26 @@ public class GUI extends JFrame {
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(PRIMARY_COLOR);
         headerPanel.setBorder(new EmptyBorder(25, 40, 25, 40));
-        
+
         JLabel brandLabel = new JLabel("GOLDENHOUR SYSTEM");
         brandLabel.setForeground(Color.WHITE);
         brandLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        
+
         JPanel userInfoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         userInfoPanel.setOpaque(false);
-        
+
         JLabel roleLabel = new JLabel(loggedInUser.getRole().toUpperCase());
         roleLabel.setForeground(ACCENT_COLOR);
         roleLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        roleLabel.setBorder(new EmptyBorder(0,0,0,15));
+        roleLabel.setBorder(new EmptyBorder(0, 0, 0, 15));
 
         JLabel userLabel = new JLabel(loggedInUser.getName());
         userLabel.setForeground(Color.WHITE);
         userLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        
+
         userInfoPanel.add(roleLabel);
         userInfoPanel.add(userLabel);
-        
+
         headerPanel.add(brandLabel, BorderLayout.WEST);
         headerPanel.add(userInfoPanel, BorderLayout.EAST);
 
@@ -240,13 +306,14 @@ public class GUI extends JFrame {
         tabbedPane.setBackground(Color.WHITE);
 
         addTab(tabbedPane, "ATTENDANCE", new AttendanceTab(dataLoader, loggedInUser).createPanel());
-        
+
         StockCountTab stockCountTab = new StockCountTab(models, loggedInUser, this);
         addTab(tabbedPane, "STOCK COUNT", stockCountTab.createPanel());
 
         Runnable refreshStockUI = stockCountTab::refreshTable;
 
-        StockInOutTab stockInOutTab = new StockInOutTab(models, outlets, dataLoader, loggedInUser, this, refreshStockUI);
+        StockInOutTab stockInOutTab = new StockInOutTab(models, outlets, dataLoader, loggedInUser, this,
+                refreshStockUI);
         addTab(tabbedPane, "STOCK IN/OUT", stockInOutTab.createPanel());
 
         SalesTab salesTab = new SalesTab(models, outlets, dataLoader, loggedInUser, this, refreshStockUI);
@@ -274,13 +341,14 @@ public class GUI extends JFrame {
         JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         footerPanel.setBackground(BG_COLOR);
         footerPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
-        
+
         ModernButton logout = new ModernButton("LOGOUT SYSTEM", new Color(231, 76, 60), Color.WHITE);
         logout.setPreferredSize(new Dimension(150, 40));
-        
+
         logout.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to logout?", "Confirm Logout", JOptionPane.YES_NO_OPTION);
-            if(confirm == JOptionPane.YES_OPTION) {
+            int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to logout?", "Confirm Logout",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
                 loggedInUser = null;
                 cardLayout.show(mainPanel, "LOGIN");
             }
@@ -307,20 +375,20 @@ public class GUI extends JFrame {
     private JPanel createPerformancePanel() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(Color.WHITE);
-        
+
         Analytics analytics = new Analytics();
 
-        String[] columns = {"Rank", "Employee Name", "Total Sales (RM)", "Txn Count"};
+        String[] columns = { "Rank", "Employee Name", "Total Sales (RM)", "Txn Count" };
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0);
         JTable table = new JTable(tableModel);
-        styleTable(table); 
+        styleTable(table);
 
         ModernButton btnGenerate = new ModernButton("GENERATE REPORT", ACCENT_COLOR, Color.WHITE);
-        
+
         btnGenerate.addActionListener(e -> {
             tableModel.setRowCount(0);
             employees = csvFile.loadEmployee();
-            
+
             List<Analytics.PerformanceEntry> performanceData = analytics.getEmployeePerformance();
 
             int rank = 1;
@@ -338,11 +406,12 @@ public class GUI extends JFrame {
                         }
                     }
                 }
-                
-                String rankStr = "RANK " + rank;
-                if(rank == 1) rankStr = "TOP RANK";
 
-                tableModel.addRow(new Object[]{
+                String rankStr = "RANK " + rank;
+                if (rank == 1)
+                    rankStr = "TOP RANK";
+
+                tableModel.addRow(new Object[] {
                         rankStr,
                         name,
                         String.format("%.2f", entry.totalSales),
@@ -359,8 +428,8 @@ public class GUI extends JFrame {
 
         panel.add(header, BorderLayout.NORTH);
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
-        
-        JPanel btnPanel = new JPanel(); 
+
+        JPanel btnPanel = new JPanel();
         btnPanel.setBackground(Color.WHITE);
         btnPanel.add(btnGenerate);
         panel.add(btnPanel, BorderLayout.SOUTH);
@@ -372,19 +441,19 @@ public class GUI extends JFrame {
     private JPanel createSalesHistoryPanel() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(Color.WHITE);
-        
+
         Analytics analytics = new Analytics();
 
         // Filter Panel
         RoundedPanel filterPanel = new RoundedPanel(15, new Color(248, 249, 250));
         filterPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
-        
+
         JTextField startField = new ModernTextField(LocalDate.now().minusWeeks(1).toString());
         startField.setColumns(8);
         JTextField endField = new ModernTextField(LocalDate.now().toString());
         endField.setColumns(8);
-        
-        String[] sortOptions = {"Date", "Amount", "Customer"};
+
+        String[] sortOptions = { "Date", "Amount", "Customer" };
         JComboBox<String> sortBox = new JComboBox<>(sortOptions);
         sortBox.setFont(MAIN_FONT);
         sortBox.setBackground(Color.WHITE);
@@ -392,17 +461,20 @@ public class GUI extends JFrame {
         JCheckBox ascCheck = new JCheckBox("Ascending", true);
         ascCheck.setBackground(new Color(248, 249, 250));
         ascCheck.setFont(MAIN_FONT);
-        
+
         ModernButton applyBtn = new ModernButton("APPLY FILTERS", PRIMARY_COLOR, Color.WHITE);
         applyBtn.setPreferredSize(new Dimension(140, 35));
 
-        filterPanel.add(new JLabel("Start:")); filterPanel.add(startField);
-        filterPanel.add(new JLabel("End:")); filterPanel.add(endField);
-        filterPanel.add(new JLabel("Sort:")); filterPanel.add(sortBox);
-        filterPanel.add(ascCheck); 
+        filterPanel.add(new JLabel("Start:"));
+        filterPanel.add(startField);
+        filterPanel.add(new JLabel("End:"));
+        filterPanel.add(endField);
+        filterPanel.add(new JLabel("Sort:"));
+        filterPanel.add(sortBox);
+        filterPanel.add(ascCheck);
         filterPanel.add(applyBtn);
 
-        String[] columns = {"Date", "Customer", "Model", "Qty", "Total (RM)"};
+        String[] columns = { "Date", "Customer", "Model", "Qty", "Total (RM)" };
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0);
         JTable table = new JTable(tableModel);
         styleTable(table);
@@ -416,23 +488,24 @@ public class GUI extends JFrame {
             try {
                 LocalDate start = LocalDate.parse(startField.getText());
                 LocalDate end = LocalDate.parse(endField.getText());
-                
-                List<Transaction> allTxns = dataLoader.loadTransactions(); 
+
+                List<Transaction> allTxns = dataLoader.loadTransactions();
                 List<Transaction> filtered = analytics.filterSalesByDate(allTxns, start, end);
-                
-                analytics.sortSales(filtered, (String)sortBox.getSelectedItem(), ascCheck.isSelected());
-                
+
+                analytics.sortSales(filtered, (String) sortBox.getSelectedItem(), ascCheck.isSelected());
+
                 tableModel.setRowCount(0);
                 for (Transaction t : filtered) {
-                    tableModel.addRow(new Object[]{
-                        t.getDate(), 
-                        t.getCustomerName(), 
-                        t.getModelName(), 
-                        t.getQuantity(), 
-                        String.format("%.2f", t.getTotalAmount())
+                    tableModel.addRow(new Object[] {
+                            t.getDate(),
+                            t.getCustomerName(),
+                            t.getModelName(),
+                            t.getQuantity(),
+                            String.format("%.2f", t.getTotalAmount())
                     });
                 }
-                cumulativeLabel.setText(String.format("Total Sales: RM %.2f", analytics.calculateCumulativeTotal(filtered)));
+                cumulativeLabel
+                        .setText(String.format("Total Sales: RM %.2f", analytics.calculateCumulativeTotal(filtered)));
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error processing records. Check date format (YYYY-MM-DD).");
             }
@@ -447,54 +520,168 @@ public class GUI extends JFrame {
 
     // --- 5. ANALYTICS PANEL ---
     private JPanel createAnalyticsPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.WHITE);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(15, 15, 15, 15);
+        JPanel wrapper = new JPanel(new BorderLayout(15, 15));
+        wrapper.setBackground(Color.WHITE);
+        wrapper.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         Analytics analytics = new Analytics();
-        
-        // Card for Total Sales
-        JPanel card1 = createAnalyticsCard("TOTAL SALES", "RM " + analytics.calculateTotalSales(), new Color(46, 204, 113));
-        // Card for Top Model
-        JPanel card2 = createAnalyticsCard("TOP SELLING MODEL", analytics.getTopSellingModel(), new Color(52, 152, 219));
 
-        ModernButton refresh = new ModernButton("REFRESH DATA", PRIMARY_COLOR, Color.WHITE);
-        
-        refresh.addActionListener(e -> {
-            updateCardValue(card1, "RM " + analytics.calculateTotalSales());
-            updateCardValue(card2, analytics.getTopSellingModel());
-        });
+        // 1. Controls
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        controls.setBackground(Color.WHITE);
 
-        gbc.gridx = 0; gbc.gridy = 0; panel.add(card1, gbc);
-        gbc.gridx = 1; gbc.gridy = 0; panel.add(card2, gbc);
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2; panel.add(refresh, gbc);
-        
-        return panel;
+        JLabel lblPeriod = new JLabel("Time Period:");
+        lblPeriod.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        String[] periods = { "Today", "This Week", "This Month" };
+        JComboBox<String> periodBox = new JComboBox<>(periods);
+        periodBox.setFont(MAIN_FONT);
+        periodBox.setBackground(Color.WHITE);
+
+        ModernButton refreshBtn = new ModernButton("REFRESH", PRIMARY_COLOR, Color.WHITE);
+        refreshBtn.setPreferredSize(new Dimension(100, 30));
+
+        controls.add(lblPeriod);
+        controls.add(periodBox);
+        controls.add(refreshBtn);
+
+        // 2. Metrics Cards
+        JPanel cardsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
+        cardsPanel.setBackground(Color.WHITE);
+
+        JPanel cardSales = createAnalyticsCard("TOTAL SALES", "RM 0.00", new Color(46, 204, 113));
+        JPanel cardModel = createAnalyticsCard("TOP MODEL", "-", new Color(52, 152, 219));
+        JPanel cardAvg = createAnalyticsCard("AVG DAILY", "RM 0.00", new Color(155, 89, 182));
+
+        cardsPanel.add(cardSales);
+        cardsPanel.add(cardModel);
+        cardsPanel.add(cardAvg);
+
+        // 3. Chart Area
+        SimpleBarChart chart = new SimpleBarChart();
+        chart.setPreferredSize(new Dimension(800, 300));
+        chart.setBorder(new LineBorder(new Color(230, 230, 230), 1));
+
+        // Action Logic
+        Runnable updateData = () -> {
+            String selectedPeriod = (String) periodBox.getSelectedItem();
+            List<Transaction> all = dataLoader.loadTransactions();
+
+            // Filter
+            LocalDate start = analytics.getStartDateForPeriod(selectedPeriod);
+            List<Transaction> filtered = analytics.filterSalesByDate(all, start, LocalDate.now());
+
+            // Update Cards
+            double total = analytics.calculateCumulativeTotal(filtered);
+            String topModel = analytics.getTopSellingModelForList(filtered);
+            double avg = analytics.calculateAverageDailySales(filtered, selectedPeriod);
+
+            updateCardValue(cardSales, String.format("RM %.2f", total));
+            updateCardValue(cardModel, topModel);
+            updateCardValue(cardAvg, String.format("RM %.2f", avg));
+
+            // Update Chart
+            Map<String, Double> trend = analytics.getTrendData(filtered, selectedPeriod);
+            chart.setData(trend);
+        };
+
+        periodBox.addActionListener(e -> updateData.run());
+        refreshBtn.addActionListener(e -> updateData.run());
+
+        // Initial Load
+        updateData.run();
+
+        wrapper.add(controls, BorderLayout.NORTH);
+        wrapper.add(cardsPanel, BorderLayout.CENTER);
+        wrapper.add(chart, BorderLayout.SOUTH);
+
+        return wrapper;
     }
 
     private JPanel createAnalyticsCard(String title, String value, Color color) {
         RoundedPanel card = new RoundedPanel(20, color);
         card.setLayout(new GridLayout(2, 1));
-        card.setPreferredSize(new Dimension(300, 150));
-        card.setBorder(new EmptyBorder(20,20,20,20));
-        
+        card.setPreferredSize(new Dimension(200, 120)); // Adjusted size
+        card.setBorder(new EmptyBorder(15, 15, 15, 15));
+
         JLabel lblTitle = new JLabel(title, JLabel.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lblTitle.setForeground(new Color(255, 255, 255, 200));
-        
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTitle.setForeground(new Color(255, 255, 255, 220));
+
         JLabel lblValue = new JLabel(value, JLabel.CENTER);
-        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 32));
+        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 24)); // Slightly smaller font
         lblValue.setForeground(Color.WHITE);
-        
+
         card.add(lblTitle);
         card.add(lblValue);
         return card;
     }
 
     private void updateCardValue(JPanel card, String newValue) {
-        if(card.getComponentCount() > 1 && card.getComponent(1) instanceof JLabel) {
-            ((JLabel)card.getComponent(1)).setText(newValue);
+        if (card.getComponentCount() > 1 && card.getComponent(1) instanceof JLabel) {
+            ((JLabel) card.getComponent(1)).setText(newValue);
+        }
+    }
+
+    // --- CHART COMPONENT ---
+    public static class SimpleBarChart extends JPanel {
+        private Map<String, Double> data = new LinkedHashMap<>();
+
+        public void setData(Map<String, Double> data) {
+            this.data = data;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (data == null || data.isEmpty())
+                return;
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int width = getWidth();
+            int height = getHeight();
+            int padding = 40;
+
+            // Find max value for scaling
+            double maxVal = data.values().stream().mapToDouble(Double::doubleValue).max().orElse(1.0);
+            if (maxVal == 0)
+                maxVal = 1;
+
+            int barWidth = (width - 2 * padding) / data.size();
+            int x = padding;
+
+            g2.setColor(Color.BLACK);
+            g2.drawLine(padding, height - padding, width - padding, height - padding); // X-Axis
+
+            for (Map.Entry<String, Double> entry : data.entrySet()) {
+                double val = entry.getValue();
+                int barHeight = (int) ((val / maxVal) * (height - 2 * padding));
+
+                // Draw Bar
+                g2.setColor(new Color(52, 152, 219));
+                g2.fillRect(x + 5, height - padding - barHeight, barWidth - 10, barHeight);
+
+                // Draw Label
+                g2.setColor(Color.DARK_GRAY);
+                g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
+
+                // Center text
+                FontMetrics fm = g2.getFontMetrics();
+                int textWidth = fm.stringWidth(entry.getKey());
+                g2.drawString(entry.getKey(), x + (barWidth - textWidth) / 2, height - padding + 15);
+
+                // Draw Value
+                if (val > 0) {
+                    String valStr = String.valueOf((int) val);
+                    int valWidth = fm.stringWidth(valStr);
+                    g2.drawString(valStr, x + (barWidth - valWidth) / 2, height - padding - barHeight - 5);
+                }
+
+                x += barWidth;
+            }
         }
     }
 
@@ -507,14 +694,13 @@ public class GUI extends JFrame {
         formPanel.setLayout(new GridBagLayout());
         formPanel.setBorder(new EmptyBorder(30, 50, 30, 50));
         formPanel.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(new Color(230,230,230), 1),
-            new EmptyBorder(30, 50, 30, 50)
-        ));
+                new LineBorder(new Color(230, 230, 230), 1),
+                new EmptyBorder(30, 50, 30, 50)));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        
+
         JLabel header = new JLabel("REGISTER NEW STAFF");
         header.setFont(HEADER_FONT);
         header.setForeground(PRIMARY_COLOR);
@@ -523,16 +709,17 @@ public class GUI extends JFrame {
         ModernTextField nameField = new ModernTextField("");
         ModernTextField idField = new ModernTextField("");
         ModernPasswordField passField = new ModernPasswordField("");
-        
-        JComboBox<String> roleBox = new JComboBox<>(new String[]{"Part-time", "Full-time", "Manager"});
+
+        JComboBox<String> roleBox = new JComboBox<>(new String[] { "Part-time", "Full-time", "Manager" });
         roleBox.setFont(MAIN_FONT);
         roleBox.setBackground(Color.WHITE);
-        
+
         JComboBox<String> outletBox = new JComboBox<>();
         outletBox.setFont(MAIN_FONT);
         outletBox.setBackground(Color.WHITE);
-        for (Map.Entry<String, String> entry : outlets.entrySet()) outletBox.addItem(entry.getKey());
-        
+        for (Map.Entry<String, String> entry : outlets.entrySet())
+            outletBox.addItem(entry.getKey());
+
         ModernButton registerBtn = new ModernButton("CREATE ACCOUNT", ACCENT_COLOR, Color.WHITE);
 
         registerBtn.addActionListener(e -> {
@@ -540,33 +727,56 @@ public class GUI extends JFrame {
                 JOptionPane.showMessageDialog(this, "Please fill all fields.");
                 return;
             }
-            employee newEmp = new employee(idField.getText(), nameField.getText(), (String)roleBox.getSelectedItem(), new String(passField.getPassword()), (String)outletBox.getSelectedItem());
+            employee newEmp = new employee(idField.getText(), nameField.getText(), (String) roleBox.getSelectedItem(),
+                    new String(passField.getPassword()), (String) outletBox.getSelectedItem());
             employees.put(idField.getText(), newEmp);
             csvFile.uploadEmployeeCSV(employees);
             JOptionPane.showMessageDialog(this, "Employee successfully registered!");
-            
-            nameField.setText(""); idField.setText(""); passField.setText("");
+
+            nameField.setText("");
+            idField.setText("");
+            passField.setText("");
         });
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2; formPanel.add(header, gbc);
-        
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        formPanel.add(header, gbc);
+
         gbc.gridwidth = 1;
-        gbc.gridx = 0; gbc.gridy = 1; formPanel.add(new JLabel("Full Name:"), gbc); 
-        gbc.gridx = 1; formPanel.add(nameField, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 2; formPanel.add(new JLabel("Staff ID:"), gbc); 
-        gbc.gridx = 1; formPanel.add(idField, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 3; formPanel.add(new JLabel("Password:"), gbc); 
-        gbc.gridx = 1; formPanel.add(passField, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 4; formPanel.add(new JLabel("Role:"), gbc); 
-        gbc.gridx = 1; formPanel.add(roleBox, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 5; formPanel.add(new JLabel("Outlet:"), gbc); 
-        gbc.gridx = 1; formPanel.add(outletBox, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2; 
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        formPanel.add(new JLabel("Full Name:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(nameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        formPanel.add(new JLabel("Staff ID:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(idField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        formPanel.add(new JLabel("Password:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(passField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        formPanel.add(new JLabel("Role:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(roleBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        formPanel.add(new JLabel("Outlet:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(outletBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
         gbc.insets = new Insets(20, 10, 10, 10);
         formPanel.add(registerBtn, gbc);
@@ -597,10 +807,17 @@ public class GUI extends JFrame {
             setForeground(fg);
             setFont(new Font("Segoe UI", Font.BOLD, 14));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
+
             addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent e) { setBackground(hoverColor); repaint(); }
-                public void mouseExited(MouseEvent e) { setBackground(baseColor); repaint(); }
+                public void mouseEntered(MouseEvent e) {
+                    setBackground(hoverColor);
+                    repaint();
+                }
+
+                public void mouseExited(MouseEvent e) {
+                    setBackground(baseColor);
+                    repaint();
+                }
             });
         }
 
@@ -626,20 +843,18 @@ public class GUI extends JFrame {
             super(text, 15);
             setFont(new Font("Segoe UI", Font.PLAIN, 14));
             setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(200, 200, 200), 1, true),
-                new EmptyBorder(5, 10, 5, 10)
-            ));
+                    new LineBorder(new Color(200, 200, 200), 1, true),
+                    new EmptyBorder(5, 10, 5, 10)));
         }
     }
-    
+
     public static class ModernPasswordField extends JPasswordField {
         public ModernPasswordField(String text) {
             super(text, 15);
             setFont(new Font("Segoe UI", Font.PLAIN, 14));
             setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(200, 200, 200), 1, true),
-                new EmptyBorder(5, 10, 5, 10)
-            ));
+                    new LineBorder(new Color(200, 200, 200), 1, true),
+                    new EmptyBorder(5, 10, 5, 10)));
         }
     }
 
@@ -659,7 +874,7 @@ public class GUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(backgroundColor);
-            g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, cornerRadius, cornerRadius);
+            g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, cornerRadius, cornerRadius);
         }
     }
 }

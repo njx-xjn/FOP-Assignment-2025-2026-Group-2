@@ -1,0 +1,18 @@
+=== Record New Sale ===
+Date: 2026-01-07
+Time: 12:57 am
+Employee: C6001
+Customer Name: Mary
+Item(s) Purchased:
+Model: SW2500-2
+Quantity: 1
+Unit Price: RM845.0
+-----------------------------
+Enter transaction method: E-Wallet
+Subtotal: RM845.00
+
+Transaction successful.
+Sale recorded successfully.
+Model quantities updated successfully.
+Receipt generated: sales_2026-01-07.txt
+--------------------------------------------------
