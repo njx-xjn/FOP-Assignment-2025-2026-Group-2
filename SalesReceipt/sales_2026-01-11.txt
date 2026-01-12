@@ -6,13 +6,7 @@ Customer Name: Derick
 Item(s) Purchased:
 Model: DW2300-2
 Quantity: 1
-Unit Price: RM399.0
 -----------------------------
 Enter transaction method: Cash
 Subtotal: RM399.00
-
-Transaction successful.
-Sale recorded successfully.
-Model quantities updated successfully.
-Receipt generated: sales_2026-01-11.txt
 --------------------------------------------------

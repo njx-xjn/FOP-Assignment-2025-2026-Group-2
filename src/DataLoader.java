@@ -11,6 +11,11 @@ public class DataLoader {
         try (BufferedReader br = new BufferedReader(new FileReader(MODEL_FILE))) {
             String header = br.readLine();
             String[] headers = header.split(",");
+            
+            // Inside loadModels()
+            for (int i = 0; i < headers.length; i++) {
+                headers[i] = headers[i].trim(); // Force remove hidden spaces
+            }
 
             String line;
             while ((line = br.readLine()) != null) {
