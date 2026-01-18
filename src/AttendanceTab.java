@@ -45,13 +45,7 @@ public class AttendanceTab {
             sb.append("=== Attendance Clock In ===\n\n");
             sb.append("Employee ID: ").append(loggedInUser.getID()).append("\n");
             sb.append("Name: ").append(loggedInUser.getName()).append("\n\n");
-
-            // Check if backend returned an error (e.g., "Already clocked in")
-            if (result.startsWith("Error") || result.startsWith("Already")) {
-                sb.append(result);
-            } else {
-                sb.append(result); // Success message
-            }
+            sb.append(result);
             displayArea.setText(sb.toString());
         });
 
@@ -64,7 +58,6 @@ public class AttendanceTab {
             sb.append("=== Attendance Clock Out ===\n\n");
             sb.append("Employee ID: ").append(loggedInUser.getID()).append("\n");
             sb.append("Name: ").append(loggedInUser.getName()).append("\n\n");
-
             sb.append(result);
             displayArea.setText(sb.toString());
         });
