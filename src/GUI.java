@@ -22,7 +22,6 @@ public class GUI extends JFrame {
     private boolean emailSentToday = false;
 
     // Services
-    private CSVfile csvFile = new CSVfile();
     private DataLoader dataLoader = new DataLoader();
     private Map<String, employee> employees;
     private Map<String, Model> models;
@@ -45,9 +44,9 @@ public class GUI extends JFrame {
         setLocationRelativeTo(null);
 
         // Load Data
-        employees = csvFile.loadEmployee();
+        employees = dataLoader.loadEmployee();
         models = dataLoader.loadModels();
-        outlets = csvFile.loadOutlets();
+        outlets = dataLoader.loadOutlets();
 
         // Main Container Style
         mainPanel.setBackground(BG_COLOR);
@@ -321,7 +320,7 @@ public class GUI extends JFrame {
                 refreshStockUI);
         addTab(tabbedPane, "STOCK IN/OUT", stockInOutTab.createPanel());
 
-        SalesTab salesTab = new SalesTab(models, outlets, dataLoader, loggedInUser, this, refreshStockUI);
+        SalesPanel salesTab = new SalesPanel(models, outlets, dataLoader, loggedInUser, this, refreshStockUI);
         addTab(tabbedPane, "POS SALES", salesTab.createPanel());
 
         addTab(tabbedPane, "HISTORY", createSalesHistoryPanel());
@@ -333,7 +332,7 @@ public class GUI extends JFrame {
         EditTab editTab = new EditTab(models, dataLoader, this);
         addTab(tabbedPane, "EDIT DATA", editTab.createPanel());
 
-        SearchTab searchTab = new SearchTab(models, outlets, dataLoader);
+        SearchPanel searchTab = new SearchPanel(models, outlets, dataLoader);
         addTab(tabbedPane, "SEARCH", searchTab.createPanel());
 
         addTab(tabbedPane, "ANALYTICS", createAnalyticsPanel());
@@ -393,7 +392,7 @@ public class GUI extends JFrame {
 
         btnGenerate.addActionListener(e -> {
             tableModel.setRowCount(0);
-            employees = csvFile.loadEmployee();
+            employees = dataLoader.loadEmployee();
             List<Analytics.PerformanceEntry> performanceData = analytics.getEmployeePerformance();
 
             int rank = 1;
@@ -713,7 +712,7 @@ public class GUI extends JFrame {
             employee newEmp = new employee(idField.getText(), nameField.getText(), (String) roleBox.getSelectedItem(),
                     new String(passField.getPassword()), (String) outletBox.getSelectedItem());
             employees.put(idField.getText(), newEmp);
-            csvFile.uploadEmployeeCSV(employees);
+            dataLoader.uploadEmployeeCSV(employees);
             JOptionPane.showMessageDialog(this, "Employee successfully registered!");
 
             nameField.setText("");

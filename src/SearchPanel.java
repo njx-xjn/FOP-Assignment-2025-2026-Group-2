@@ -3,7 +3,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
 
-public class SearchTab {
+public class SearchPanel {
     private Map<String, Model> models;
     private Map<String, String> outlets;
     private DataLoader dataLoader;
@@ -13,7 +13,7 @@ public class SearchTab {
     private JTextArea resultArea;
     private JLabel searchLabel;
 
-    public SearchTab(Map<String, Model> models, Map<String, String> outlets, DataLoader dataLoader) {
+    public SearchPanel(Map<String, Model> models, Map<String, String> outlets, DataLoader dataLoader) {
         this.models = models;
         this.outlets = outlets;
         this.dataLoader = dataLoader;
