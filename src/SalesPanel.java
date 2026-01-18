@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SalesTab {
+public class SalesPanel {
     private Map<String, Model> models;
     private Map<String, String> outlets;
     private DataLoader dataLoader;
@@ -15,7 +15,7 @@ public class SalesTab {
     private JPanel salesItemsPanel;
     private List<SalesRow> salesRows;
 
-    public SalesTab(Map<String, Model> models, Map<String, String> outlets, DataLoader dataLoader,
+    public SalesPanel(Map<String, Model> models, Map<String, String> outlets, DataLoader dataLoader,
             employee loggedInUser, Component parentComponent, Runnable onStockUpdate) {
         this.models = models;
         this.outlets = outlets;

@@ -1,0 +1,15 @@
+=== Stock In ===
+Date: 2026-01-12
+Time: 12:59 PM
+From: HQ (Service Center)
+To: C61 (MidValley)
+Models Received:
+
+    - DW2300-1 (Quantity: 5)
+
+Total Quantity: 5
+Name of Employee in Charge: Tan Guan Han
+
+Model quantities updated successfully.
+Stock In recorded.
+--------------------------------------------------
