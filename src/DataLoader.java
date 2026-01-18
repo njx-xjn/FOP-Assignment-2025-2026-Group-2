@@ -9,7 +9,7 @@ public class DataLoader {
     
     public Map<String, employee> loadEmployee() {
         Map<String, employee> employee = new TreeMap<>();
-        try (BufferedReader br = new BufferedReader(new FileReader("EMPLOYEE_FILE"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(EMPLOYEE_FILE))) {
             br.readLine();
             String line;
             while ((line = br.readLine()) != null) {
@@ -34,7 +34,7 @@ public class DataLoader {
 
     public Map<String, String> loadOutlets() {
         Map<String, String> outlet = new LinkedHashMap<>(); // LinkedHashMap preserves order
-        try (BufferedReader br = new BufferedReader(new FileReader("OUTLET_FILE"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(OUTLET_FILE))) {
             br.readLine(); // Skip header
             String line;
             while ((line = br.readLine()) != null) {
@@ -50,7 +50,7 @@ public class DataLoader {
     }
 
     public void uploadEmployeeCSV(Map<String, employee> employee) {
-        try (PrintWriter pw = new PrintWriter(new FileWriter("EMPLOYEE_FILE"))) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(EMPLOYEE_FILE))) {
             pw.println("EmployeeID,EmployeeName,Role,Password,OutletCode"); // Header
             for (employee e : employee.values()) {
                 pw.printf("%s,%s,%s,%s,%s\n", e.getID(), e.getName(), e.getRole(), e.getPassword(), e.getOutlet());
