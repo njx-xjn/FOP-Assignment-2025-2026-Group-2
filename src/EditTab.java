@@ -7,14 +7,17 @@ import java.util.List;
 import java.util.Map;
 
 public class EditTab {
+    // SHARED DATA
+    // We get these from GUI.java so that when we edit a stock count here,
+    // it updates the "real" data immediately across the whole app.
     private Map<String, Model> models;
     private DataLoader dataLoader;
-    private Component parentComponent;
+    private Component parentComponent; // Reference to the Main Window (for popups)
 
     // UI Components
     private JComboBox<String> editTypeBox;
     private JPanel contentPanel;
-    private CardLayout cardLayout;
+    private CardLayout cardLayout; // The "Switcher" layout
 
     // Stock Edit Components
     private JTextField stockModelField;
@@ -25,7 +28,8 @@ public class EditTab {
     private JButton updateStockBtn;
     private String currentModelName;
     
-    // Consistent Outlet Codes based on model.csv headers
+    // Hardcoded list of outlets. In a real enterprise app, we might load this from a DB,
+    // but for this assignment, using the array ensures we match the CSV headers exactly.
     private final String[] outletCodes = {"C60", "C61", "C62", "C63", "C64", "C65", "C66", "C67", "C68", "C69"};
 
     // Sales Edit Components
@@ -33,10 +37,15 @@ public class EditTab {
     private JTextField salesCustomerField;
     private JButton updateSalesBtn;
 
+    // State variables to remember which file and which lines we are currently editing
     private File currentSalesFile;
     private int currentBlockStartIndex; 
     private int currentBlockEndIndex; 
 
+    // --- CONSTRUCTOR ---
+    // ** CONNECTION TO GUI.JAVA **
+    // GUI.java creates this class and passes the 'models' map.
+    // This is crucial: By passing the map, we are editing the LIVE data.
     public EditTab(Map<String, Model> models, DataLoader dataLoader, Component parentComponent) {
         this.models = models;
         this.dataLoader = dataLoader;
@@ -46,23 +55,29 @@ public class EditTab {
     public JPanel createPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        // Top: Edit Type Selection
+        // --- TOP BAR (The Switcher) ---
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         topPanel.add(new JLabel("Edit Type: "));
+        
+        // User selects "Stock" or "Sales" here
         editTypeBox = new JComboBox<>(new String[] { "Edit Stock Information", "Edit Sales Information" });        
         topPanel.add(editTypeBox);
         panel.add(topPanel, BorderLayout.NORTH);
 
-        // Center: Card Layout for content
+        // --- CENTER CONTENT (CardLayout) ---
+        // CardLayout acts like a deck of cards. We stack the "Stock Panel" and "Sales Panel"
+        // on top of each other and only show one at a time.
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
+        // Create the two different interface screens
         contentPanel.add(createStockEditPanel(), "STOCK");
         contentPanel.add(createSalesEditPanel(), "SALES");
 
         panel.add(contentPanel, BorderLayout.CENTER);
 
+        // LISTENER: When dropdown changes, flip the card
         editTypeBox.addActionListener(e -> {
             String selected = (String) editTypeBox.getSelectedItem();
             if (selected.contains("Stock")) {
@@ -76,16 +91,19 @@ public class EditTab {
     }
 
     // --- STOCK EDIT PANEL ---
+    // This allows Managers to manually fix stock counts (e.g., if a physical count was wrong).
     private JPanel createStockEditPanel() {
         JPanel panel = new JPanel(new BorderLayout());
+        
+        // Using GridBagLayout because we need a precise "Form" layout (Labels aligned left, Inputs aligned right)
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.insets = new Insets(8, 10, 8, 10); // Padding between cells
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Row 0: Search
+        // Row 0: Search Input
         gbc.gridx = 0; gbc.gridy = 0;
         formPanel.add(new JLabel("Enter Model Name:"), gbc);
         stockModelField = new JTextField(15);
@@ -95,17 +113,17 @@ public class EditTab {
         gbc.gridx = 2;
         formPanel.add(searchBtn, gbc);
 
-        // Row 1: Outlet Selection
+        // Row 1: Outlet Dropdown
         gbc.gridx = 0; gbc.gridy = 1;
         formPanel.add(new JLabel("Select Outlet:"), gbc);
         
         outletBox = new JComboBox<>(outletCodes);
-        outletBox.setBackground(new Color(240, 240, 240)); // Restore original gray color
+        outletBox.setBackground(new Color(240, 240, 240)); 
         
         gbc.gridx = 1;
         formPanel.add(outletBox, gbc);
 
-        // Row 2: Outlet Specific Info
+        // Row 2: Current Status (Specific Outlet)
         gbc.gridx = 0; gbc.gridy = 2;
         formPanel.add(new JLabel("Current Stock (Selected Outlet):"), gbc);
         outletStockLabel = new JLabel("-");
@@ -113,7 +131,7 @@ public class EditTab {
         gbc.gridx = 1;
         formPanel.add(outletStockLabel, gbc);
 
-        // Row 3: Total Info
+        // Row 3: Total Status (Global)
         gbc.gridx = 0; gbc.gridy = 3;
         formPanel.add(new JLabel("Total Stock (All Outlets):"), gbc);
         currentStockLabel = new JLabel("-");
@@ -124,33 +142,38 @@ public class EditTab {
         gbc.gridx = 0; gbc.gridy = 4;
         formPanel.add(new JLabel("Enter New Stock for Outlet:"), gbc);
         newStockField = new JTextField(10);
-        newStockField.setEnabled(false);
+        newStockField.setEnabled(false); // Disabled until a model is found
         gbc.gridx = 1;
         formPanel.add(newStockField, gbc);
 
-        // Row 5: Update Button
+        // Row 5: Action Button
         updateStockBtn = new JButton("Update Selected Outlet Stock");
         updateStockBtn.setEnabled(false);
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 3;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 3; // Span across 3 columns
         gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(updateStockBtn, gbc);
 
+        // Event Listeners
         searchBtn.addActionListener(e -> updateStockDisplay());
-        outletBox.addActionListener(e -> updateStockDisplay());
+        outletBox.addActionListener(e -> updateStockDisplay()); // Refresh display if outlet changes
 
+        // UPDATE LOGIC
         updateStockBtn.addActionListener(e -> {
             try {
+                // Parse input
                 int newStock = Integer.parseInt(newStockField.getText().trim());
                 if (newStock < 0) throw new NumberFormatException();
 
+                // 1. Update the Memory Object (Live Data)
                 Model m = models.get(currentModelName);
                 String selectedOutlet = (String) outletBox.getSelectedItem();
-
                 m.setStock(selectedOutlet, newStock);
+                
+                // 2. Save to CSV immediately so changes persist after restart
                 dataLoader.saveModels(models, Arrays.asList(outletCodes));
 
                 JOptionPane.showMessageDialog(parentComponent, "Stock updated successfully for " + selectedOutlet);
-                updateStockDisplay();
+                updateStockDisplay(); // Refresh UI to show new numbers
                 newStockField.setText("");
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(parentComponent, "Invalid stock value. Please enter a positive integer.");
@@ -161,8 +184,10 @@ public class EditTab {
         return panel;
     }
 
+    // Helper: Refreshes the text labels showing current stock
     private void updateStockDisplay() {
         String modelName = stockModelField.getText().trim();
+        // Check if the typed model actually exists in our Map
         if (models.containsKey(modelName)) {
             currentModelName = modelName;
             Model m = models.get(modelName);
@@ -171,9 +196,11 @@ public class EditTab {
             outletStockLabel.setText(String.valueOf(m.getStock(selectedOutlet)));
             currentStockLabel.setText(String.valueOf(m.getTotalStock()));
             
+            // Enable editing now that we found the model
             newStockField.setEnabled(true);
             updateStockBtn.setEnabled(true);
         } else {
+            // Model not found
             if(!modelName.isEmpty()) JOptionPane.showMessageDialog(parentComponent, "Model not found.");
             outletStockLabel.setText("-");
             currentStockLabel.setText("-");
@@ -183,21 +210,23 @@ public class EditTab {
     }
 
     // --- SALES EDIT PANEL ---
+    // This allows editing past sales receipts. 
+    // It's trickier because we have to edit a text file, not just a variable in memory.
     private JPanel createSalesEditPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         JPanel formPanel = new JPanel(new GridBagLayout());
         
-        // Moved higher by reducing top border and insets
         formPanel.setBorder(BorderFactory.createEmptyBorder(5, 20, 20, 20));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(3, 5, 3, 5); 
         gbc.anchor = GridBagConstraints.WEST;
 
+        // Search Inputs
         gbc.gridx = 0; gbc.gridy = 0;
         formPanel.add(new JLabel("Enter Transaction Date (YYYY-MM-DD):"), gbc);
         salesDateField = new JTextField(15);
-        salesDateField.setText(java.time.LocalDate.now().toString());
+        salesDateField.setText(java.time.LocalDate.now().toString()); // Default to today
         gbc.gridx = 1;
         formPanel.add(salesDateField, gbc);
 
@@ -211,26 +240,30 @@ public class EditTab {
         gbc.gridx = 2; gbc.gridy = 1;
         formPanel.add(searchBtn, gbc);
 
+        // Visual Separator
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3;
         gbc.insets = new Insets(5, 5, 5, 5);
         formPanel.add(new JSeparator(), gbc);
         gbc.gridwidth = 1;
 
+        // Display Area (Shows the text found in the file)
         gbc.gridx = 0; gbc.gridy = 3;
         formPanel.add(new JLabel("Current Record Details:"), gbc);
 
         JTextArea recordSummaryArea = new JTextArea(10, 35);
         recordSummaryArea.setEditable(false);
-        recordSummaryArea.setBackground(new Color(240, 240, 240)); // Matches original gray theme
+        recordSummaryArea.setBackground(new Color(240, 240, 240)); 
         JScrollPane scrollPane = new JScrollPane(recordSummaryArea);
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 3;
         gbc.fill = GridBagConstraints.BOTH;
         formPanel.add(scrollPane, gbc);
 
+        // Edit Controls
         gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
         formPanel.add(new JLabel("Select Field to Edit:"), gbc);
 
+        // The specific lines in the text file we know how to change
         String[] fields = { "Customer Name", "Model", "Quantity", "Total Price", "Transaction Method" };
         JComboBox<String> fieldSelectBox = new JComboBox<>(fields);        
         gbc.gridx = 1;
@@ -251,6 +284,7 @@ public class EditTab {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(updateSalesBtn, gbc);
 
+        // Hook up listeners
         searchBtn.addActionListener(e -> findSalesRecord(recordSummaryArea));
 
         updateSalesBtn.addActionListener(e -> {
@@ -260,6 +294,7 @@ public class EditTab {
                 JOptionPane.showMessageDialog(parentComponent, "Please enter a new value.");
                 return;
             }
+            // Trigger the file rewrite logic
             updateSalesRecord(field, newVal, recordSummaryArea);
         });
 
@@ -267,15 +302,19 @@ public class EditTab {
         return panel;
     }
 
+    // --- FIND SALES RECORD LOGIC ---
+    // Scans a text file line-by-line to find a block of text matching the customer.
     private void findSalesRecord(JTextArea summaryArea) {
         String date = salesDateField.getText().trim();
         String customer = salesCustomerField.getText().trim();
 
+        // Basic validation
         if (date.isEmpty() || customer.isEmpty()) {
             JOptionPane.showMessageDialog(parentComponent, "Please enter both Date and Customer Name.");
             return;
         }
 
+        // Locate the specific daily file
         File dir = new File("SalesReceipt");
         File file = new File(dir, "sales_" + date + ".txt");
         if (!file.exists()) {
@@ -286,6 +325,7 @@ public class EditTab {
         currentSalesFile = file;
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            // Read entire file into memory list
             List<String> lines = new ArrayList<>();
             String line;
             while ((line = br.readLine()) != null) {
@@ -296,19 +336,23 @@ public class EditTab {
             int startIdx = -1;
             int endIdx = -1;
 
+            // Algorithm: Loop through lines looking for "Customer Name: [Input]"
             for (int i = 0; i < lines.size(); i++) {
                 String l = lines.get(i);
                 if (l.contains("Customer Name:") && l.contains(customer)) {
+                    
+                    // Found it! Now backtrack UP to find the start of the receipt (===)
                     int tempStart = i;
                     while (tempStart >= 0 && !lines.get(tempStart).startsWith("===")) {
                         tempStart--;
                     }
                     startIdx = tempStart;
 
+                    // Now look DOWN to find the end of the receipt (dashed line)
                     int tempEnd = i;
                     while (tempEnd < lines.size()) {
                         String currentLine = lines.get(tempEnd);
-                        // Captures up to the long separator to include payment method
+                        // We check length > 40 to find the long separator line
                         if (currentLine.startsWith("---") && currentLine.length() > 40) {
                             break;
                         }
@@ -318,18 +362,20 @@ public class EditTab {
                     
                     endIdx = tempEnd;
                     matchFound = true;
-                    break;
+                    break; // Stop after first match
                 }
             }
 
             if (matchFound && startIdx != -1) {
+                // Save indices so we know exactly which lines to replace later
                 currentBlockStartIndex = startIdx;
                 currentBlockEndIndex = endIdx;
 
+                // Show the found record in the text area
                 StringBuilder sb = new StringBuilder();
                 for (int i = startIdx; i <= endIdx; i++) {
                     String lineContent = lines.get(i);
-                    // Filter out requested status messages and empty lines
+                    // Filter out "System success messages" that shouldn't be edited
                     if (!isStatusLine(lineContent)) {
                         sb.append(lineContent).append("\n");
                     }
@@ -347,11 +393,15 @@ public class EditTab {
         }
     }
 
+    // --- UPDATE SALES RECORD LOGIC ---
+    // This performs "Surgery" on the text file. 
+    // It keeps the top part, replaces the middle part (edited lines), and keeps the bottom part.
     private void updateSalesRecord(String field, String newVal, JTextArea summaryArea) {
         if (currentSalesFile == null || !currentSalesFile.exists())
             return;
 
         try {
+            // 1. Read the WHOLE file into memory again
             BufferedReader br = new BufferedReader(new FileReader(currentSalesFile));
             List<String> lines = new ArrayList<>();
             String line;
@@ -360,15 +410,17 @@ public class EditTab {
             }
             br.close();
 
+            // 2. Reconstruct the specific block of lines we are editing
             List<String> newBlock = new ArrayList<>();
             for (int i = currentBlockStartIndex; i <= currentBlockEndIndex && i < lines.size(); i++) {
                 String original = lines.get(i);
                 
-                // Remove status lines from the file logic
+                // Skip status lines
                 if (isStatusLine(original)) continue;
 
                 String updated = original;
 
+                // Logic: Check which field was selected and swap the text
                 if (field.equals("Customer Name") && original.startsWith("Customer Name:")) {
                     updated = "Customer Name: " + newVal;
                 } else if (field.equals("Model") && original.startsWith("Model:")) {
@@ -384,13 +436,18 @@ public class EditTab {
                 newBlock.add(updated);
             }
 
+            // 3. Rebuild the full file list
             List<String> validLines = new ArrayList<>();
+            // Add lines BEFORE the edited block
             for (int i = 0; i < currentBlockStartIndex; i++)
                 validLines.add(lines.get(i));
+            // Add the NEW edited block
             validLines.addAll(newBlock);
+            // Add lines AFTER the edited block
             for (int i = currentBlockEndIndex + 1; i < lines.size(); i++)
                 validLines.add(lines.get(i));
 
+            // 4. Write everything back to the file
             PrintWriter pw = new PrintWriter(new FileWriter(currentSalesFile));
             for (String l : validLines) {
                 pw.println(l);
@@ -399,6 +456,7 @@ public class EditTab {
 
             JOptionPane.showMessageDialog(parentComponent, "Sales information updated successfully.");
 
+            // Update the display area to show the new values
             StringBuilder sb = new StringBuilder();
             for (String l : newBlock)
                 sb.append(l).append("\n");
@@ -409,7 +467,7 @@ public class EditTab {
         }
     }
 
-    // Filters out lines identifying transaction status or empty lines
+    // Helper: Identify lines we don't want to show/edit (like "Transaction successful")
     private boolean isStatusLine(String line) {
         return line.isEmpty() ||
                line.contains("Unit Price:") ||

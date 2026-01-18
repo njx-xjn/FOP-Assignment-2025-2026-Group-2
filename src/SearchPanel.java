@@ -1,13 +1,15 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
 
 public class SearchPanel {
-    private Map<String, Model> models;
-    private Map<String, String> outlets;
-    private DataLoader dataLoader;
 
+    // Dependencies
+    private Map<String, Model> models;     // Live Stock Data
+    private Map<String, String> outlets;   // Outlet Names
+    private DataLoader dataLoader;         // To access file search functions
+
+    // UI Components
     private JComboBox<String> searchTypeBox;
     private JTextField searchInputField;
     private JTextArea resultArea;
@@ -22,20 +24,22 @@ public class SearchPanel {
     public JPanel createPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        // Top Panel: Search Configuration
+        // --- TOP PANEL: CONFIGURATION ---
         JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
         topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
 
+        // 1. Search Type Dropdown
         JPanel configPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchTypeBox = new JComboBox<>(new String[] { "Search Stock Information", "Search Sales Information" });
         configPanel.add(new JLabel("Search Type: "));
         configPanel.add(searchTypeBox);
 
+        // 2. Search Input
         JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchLabel = new JLabel("Search Model Name: ");
         searchInputField = new JTextField(20);
         JButton searchBtn = new JButton("Search");
-        searchBtn.setBackground(GUI.PRIMARY_COLOR); 
+        searchBtn.setBackground(GUI.PRIMARY_COLOR); // Use brand color
 
         inputPanel.add(searchLabel);
         inputPanel.add(searchInputField);
@@ -46,16 +50,19 @@ public class SearchPanel {
 
         panel.add(topPanel, BorderLayout.NORTH);
 
-        // Center Panel: Results
+        // --- CENTER PANEL: RESULTS DISPLAY ---
         resultArea = new JTextArea();
-        resultArea.setEditable(false);
-        resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        resultArea.setBackground(new Color(230, 240, 255)); // Light blue per user request/mockup
+        resultArea.setEditable(false); // Read-only
+        resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14)); // Monospace aligns text nicely
+        resultArea.setBackground(new Color(230, 240, 255)); // Light blue background
         resultArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // ScrollPane ensures we can read long results
         panel.add(new JScrollPane(resultArea), BorderLayout.CENTER);
 
-        // Logic
+        // --- EVENT LISTENERS ---
+        
+        // Listener: Switch Labels when Dropdown changes
         searchTypeBox.addActionListener(e -> {
             String selected = (String) searchTypeBox.getSelectedItem();
             if (selected.contains("Stock")) {
@@ -63,16 +70,20 @@ public class SearchPanel {
             } else {
                 searchLabel.setText("Search (Date/Cust/Model): ");
             }
-            resultArea.setText(""); // Clear results on switch
+            resultArea.setText(""); // Clear previous results
         });
 
+        // Listener: Run search when button clicked
         searchBtn.addActionListener(e -> performSearch());
 
         return panel;
     }
 
+    // --- SEARCH LOGIC ---
     private void performSearch() {
         String query = searchInputField.getText().trim();
+        
+        // Validation: Don't search for empty strings
         if (query.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Please enter a search term.");
             return;
@@ -81,8 +92,10 @@ public class SearchPanel {
         resultArea.setText("Searching...\n\n");
         String type = (String) searchTypeBox.getSelectedItem();
 
+        // MODE 1: STOCK SEARCH (Memory Lookup)
+        // This is extremely fast because 'models' is a HashMap in RAM.
         if (type.contains("Stock")) {
-            // STOCK SEARCH
+            
             if (models.containsKey(query)) {
                 Model m = models.get(query);
                 StringBuilder sb = new StringBuilder();
@@ -90,15 +103,19 @@ public class SearchPanel {
                 sb.append("Unit Price: RM").append(String.format("%.2f", m.getPrice())).append("\n\n");
                 sb.append("Stock by Outlet:\n");
 
+                // Loop through all outlets to show stock distribution
                 int count = 0;
                 for (Map.Entry<String, String> entry : outlets.entrySet()) {
                     String code = entry.getKey();
                     String name = entry.getValue();
-                    // Display like "KLCC: 1", 3 per line or simply listed
+                    
+                    // Formatting: String.format("%-20s", ...) adds padding for alignment
                     sb.append(String.format("%-20s: %d", name, m.getStock(code)));
                     count++;
+                    
+                    // New line every 3 items so it doesn't get too wide
                     if (count % 3 == 0)
-                        sb.append("\n"); // Newline every 3 items
+                        sb.append("\n"); 
                     else
                         sb.append("    ");
                 }
@@ -109,8 +126,9 @@ public class SearchPanel {
             }
 
         } else {
-            // SALES SEARCH
-            // Search via DataLoader through text files
+            // MODE 2: SALES SEARCH (File Scan)
+            // This is slower because we have to ask DataLoader to open text files on the disk.
+            // It scans through receipts for keywords (Customer Name, Date, etc.)
             String results = dataLoader.searchSalesReceipts(query);
             resultArea.setText(results);
         }
